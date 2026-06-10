@@ -61,11 +61,8 @@ function idFromPath(pathname, prefix) {
   return pathname.slice(prefix.length) || null;
 }
 
-export function repairPriceApiPlugin() {
-  return {
-    name: 'repair-price-api',
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
+function registerRepairPriceApi(server) {
+  server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url, 'http://localhost');
         const { pathname } = url;
 
@@ -301,6 +298,12 @@ export function repairPriceApiPlugin() {
 
         next();
       });
-    },
+}
+
+export function repairPriceApiPlugin() {
+  return {
+    name: 'repair-price-api',
+    configureServer: registerRepairPriceApi,
+    configurePreviewServer: registerRepairPriceApi,
   };
 }
