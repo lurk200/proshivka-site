@@ -38,23 +38,33 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-[var(--border-subtle)] transition-colors duration-500 ease-premium"
+      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-[var(--border-subtle)] transition-colors duration-500 ease-premium pt-[env(safe-area-inset-top,0px)]"
       style={{ background: 'var(--glass-bg)' }}
     >
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-20 sm:gap-3 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between gap-1.5 px-3 sm:h-20 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="shrink-0 rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84CC16]/50"
+          className="min-w-0 shrink rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84CC16]/50"
           aria-label={`${company.name} — ${company.descriptor}`}
         >
-          <BrandWordmark name={company.name} tagline={company.brandTagline} />
+          <BrandWordmark
+            name={company.name}
+            tagline={company.brandTagline}
+            compact
+            className="sm:hidden"
+          />
+          <BrandWordmark
+            name={company.name}
+            tagline={company.brandTagline}
+            className="hidden sm:inline-flex"
+          />
         </Link>
 
         <div className="hidden lg:flex flex-1 items-center justify-center px-2 min-w-0">
           <HeaderNavDesktop />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <HeaderNavMobile />
           {activeContacts.length > 0 ? (
             <div
@@ -63,16 +73,16 @@ export default function Header() {
             >
               <a
                 href={phoneHref}
-                className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:text-[#84CC16] transition-colors sm:gap-2 sm:px-2.5 sm:text-[13px]"
+                className="inline-flex min-w-0 items-center gap-1.5 px-1.5 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:text-[#84CC16] transition-colors sm:gap-2 sm:px-2.5 sm:text-[13px]"
                 aria-label={`Позвонить: ${company.phone}`}
               >
                 <Phone className="w-4 h-4 text-[#84CC16] shrink-0" strokeWidth={1.5} />
-                <span className="truncate max-w-[9.5rem] sm:max-w-none">{company.phone}</span>
+                <span className="hidden min-[400px]:inline truncate max-w-[7rem] sm:max-w-none">{company.phone}</span>
               </a>
 
               <button
                 type="button"
-                className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:text-[#84CC16] md:hidden"
+                className="hidden min-[400px]:flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:text-[#84CC16] md:hidden"
                 aria-expanded={mobileOpen}
                 aria-label={mobileOpen ? 'Скрыть мессенджеры' : 'Показать мессенджеры'}
                 onClick={() => setMobileOpen((open) => !open)}
@@ -106,7 +116,9 @@ export default function Header() {
             </a>
           )}
 
-          <ThemeToggle />
+          <span className="hidden min-[400px]:inline-flex">
+            <ThemeToggle />
+          </span>
         </div>
       </div>
     </header>

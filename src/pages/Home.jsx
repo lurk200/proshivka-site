@@ -19,7 +19,7 @@ export default function Home() {
           style={{ background: 'var(--glow-accent)' }}
         />
 
-        <div className="relative z-10 mx-auto w-full min-w-0 max-w-[90rem] px-4 pb-10 pt-24 sm:px-6 sm:pb-14 sm:pt-28 lg:px-8">
+        <div className="relative z-10 mx-auto w-full min-w-0 max-w-[90rem] px-4 pb-10 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-14 sm:pt-[calc(5.5rem+env(safe-area-inset-top,0px))] lg:px-8">
           <section className="py-4 sm:py-6 lg:py-8">
             <HomeServiceBanners />
           </section>

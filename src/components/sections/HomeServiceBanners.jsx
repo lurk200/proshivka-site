@@ -26,13 +26,11 @@ function resolveBannerGradientVars(gradient = {}) {
   };
 }
 
-function ShortBannerCard({ banner, index, isLast }) {
-  const lastOnMobile = isLast ? 'col-span-2 w-full max-w-[11rem] justify-self-center md:col-span-1 md:max-w-none md:justify-self-stretch' : '';
-
+function ShortBannerCard({ banner, index }) {
   return (
-    <li className={`min-w-0 list-none ${lastOnMobile}`}>
+    <li className="home-banner-item min-w-0 list-none snap-start">
       <Reveal delay={index * 40} immediate className="block h-full w-full min-w-0">
-        <Link to={banner.path} className={`${cardBaseClass} aspect-[9/16] h-full w-full`}>
+        <Link to={banner.path} className={`${cardBaseClass} aspect-[3/4] h-full w-full sm:aspect-[4/5] md:aspect-[9/16]`}>
           <img
             src={banner.image}
             alt={banner.title}
@@ -90,33 +88,33 @@ function ShortBannerCard({ banner, index, isLast }) {
 export default function HomeServiceBanners() {
   const { cmsData } = useCms();
   const { bannersSection, banners } = cmsData.mainHome;
-  const lastIndex = banners.length - 1;
   const gradVars = resolveBannerGradientVars(bannersSection.gradient);
 
   return (
     <section className="home-banners w-full min-w-0" style={gradVars}>
-      <Reveal immediate className="mx-auto mb-5 max-w-2xl text-center sm:mb-8 md:mb-10">
+      <Reveal immediate className="mx-auto mb-4 max-w-2xl px-1 text-center sm:mb-8 md:mb-10">
         <span className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-[#84CC16]">
           {bannersSection.eyebrow}
         </span>
-        <p className="text-[14px] leading-relaxed text-[var(--text-secondary)] sm:text-[15px]">
+        <p className="text-[13px] leading-relaxed text-[var(--text-secondary)] sm:text-[15px]">
           {bannersSection.subtitle}
         </p>
       </Reveal>
 
-      <ul
-        className="home-banners-grid m-0 grid w-full list-none grid-cols-2 gap-3 p-0 sm:gap-4 md:grid-cols-3 md:gap-4 lg:gap-5 xl:grid-cols-5"
-        aria-label="Услуги лаборатории"
-      >
-        {banners.map((banner, index) => (
-          <ShortBannerCard
-            key={banner.id}
-            banner={banner}
-            index={index}
-            isLast={index === lastIndex}
-          />
-        ))}
-      </ul>
+      <div className="home-banners-scroll -mx-4 px-4 md:mx-0 md:px-0">
+        <ul
+          className="home-banners-grid m-0 flex list-none gap-3 p-0 pb-1 sm:gap-4 md:grid md:grid-cols-3 md:gap-4 lg:gap-5 xl:grid-cols-5"
+          aria-label="Услуги лаборатории"
+        >
+          {banners.map((banner, index) => (
+            <ShortBannerCard
+              key={banner.id}
+              banner={banner}
+              index={index}
+            />
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

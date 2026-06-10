@@ -87,6 +87,35 @@
     background-size: 32px 32px;
   }
 
+  /* Главная: карусель баннеров на мобильных */
+  .home-banners-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .home-banners-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-banner-item {
+    flex: 0 0 min(72vw, 11.5rem);
+    scroll-snap-align: start;
+  }
+
+  @media (min-width: 48rem) {
+    .home-banners-scroll {
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+
+    .home-banner-item {
+      flex: initial;
+    }
+  }
+
   /* Главная: фото в узких колонках (2/3 в ряд) */
   .banner-card-img {
     opacity: calc(0.48 * var(--banner-image-factor, 1));

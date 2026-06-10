@@ -3,7 +3,7 @@ import { Reveal } from '../../components/ui';
 
 export default function PriceHero() {
   return (
-    <section className="relative pb-10 pt-28 sm:pb-12 sm:pt-32 md:pt-36">
+    <section className="relative pb-10 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:pb-12 sm:pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:pt-36">
       <div
         className="pointer-events-none absolute inset-0 bg-diagnostic-grid opacity-[var(--grid-opacity)]"
         aria-hidden

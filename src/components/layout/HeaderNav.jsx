@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { useCms } from '../../context/CmsContext';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const CLOSE_DELAY_MS = 220;
 
@@ -212,7 +213,7 @@ export function HeaderNavMobile() {
             onClick={closeAll}
           />
           <nav
-            className="fixed left-0 right-0 top-16 z-50 max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-[var(--border-subtle)] backdrop-blur-xl px-4 py-4 sm:top-20 lg:hidden"
+            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-[var(--border-subtle)] backdrop-blur-xl px-4 py-4 sm:top-20 lg:hidden"
             aria-label="Мобильное меню"
             style={{ background: 'var(--glass-bg)' }}
           >
@@ -254,6 +255,11 @@ export function HeaderNavMobile() {
                   </Link>
                 );
               })}
+
+              <div className="flex min-[400px]:hidden items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 px-3 py-2.5 mt-2">
+                <span className="text-[13px] font-medium text-[var(--text-secondary)]">Тема оформления</span>
+                <ThemeToggle />
+              </div>
             </div>
           </nav>
         </>
