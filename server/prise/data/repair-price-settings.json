@@ -1,0 +1,39 @@
+{
+  "enabled": true,
+  "city": "Ставрополь",
+  "labor": {
+    "display": 0,
+    "battery": 1000
+  },
+  "markup": {
+    "globalPercent": 100,
+    "byTier": {
+      "full-orig": 0,
+      "original": 0,
+      "oled-jcid": 0,
+      "soft-oled": 0,
+      "oled": 0,
+      "jcid": 0,
+      "copy-good": 0,
+      "copy": 0
+    },
+    "byCategory": {
+      "display": 30,
+      "battery": 100
+    },
+    "fixedRub": 0
+  },
+  "repairTime": {
+    "display": {
+      "default": "1–2 часа",
+      "premium": "2–3 часа",
+      "premiumThreshold": 10000
+    },
+    "battery": {
+      "default": "40–60 мин",
+      "premium": "1–2 часа",
+      "premiumThreshold": 8000
+    }
+  },
+  "maxOptionsPerCategory": 8
+}

@@ -1,0 +1,74 @@
+{
+  "orders": [
+    {
+      "id": "example-0001",
+      "orderNumber": "250524-01",
+      "device": "iPhone 14 Pro",
+      "status": "completed",
+      "cost": 12800,
+      "costConfirmed": true,
+      "publicComment": "Замена OLED-модуля. Запчасть в наличии, ремонт до вечера пятницы.",
+      "internalNote": "Клиент просил звонок перед выдачей",
+      "clientName": "Иванов Иван",
+      "clientPhone": "+7 962 425 44 63",
+      "reason": "Артефакты на экране",
+      "appearance": "Царапины на корпусе",
+      "kit": "Без коробки",
+      "prepayment": 0,
+      "recommendations": "Не подвергать влаге 48 часов",
+      "estimatedReadyAt": "2025-05-27",
+      "managerName": "Мастер",
+      "workPerformed": "Замена OLED-модуля, калибровка True Tone, проверка сенсора и Face ID.",
+      "readyAt": "2025-05-24T15:00:00.000Z",
+      "issuedAt": "2025-05-24T16:00:00.000Z",
+      "completionAct": {
+        "number": "АВР-250524-01",
+        "issuedAt": "2025-05-24T16:00:00.000Z"
+      },
+      "warranty": {
+        "days": 90,
+        "from": "2025-05-24T16:00:00.000Z",
+        "until": "2025-08-22T16:00:00.000Z"
+      },
+      "createdAt": "2025-05-24T10:00:00.000Z",
+      "updatedAt": "2025-05-24T16:00:00.000Z",
+      "history": [
+        {
+          "status": "accepted",
+          "label": "Принято",
+          "at": "2025-05-24T10:00:00.000Z",
+          "note": "Устройство принято в лабораторию",
+          "public": true
+        },
+        {
+          "status": "diagnostics",
+          "label": "Диагностика",
+          "at": "2025-05-24T11:00:00.000Z",
+          "note": "Требуется замена дисплейного модуля",
+          "public": true
+        },
+        {
+          "status": "in_progress",
+          "label": "В работе",
+          "at": "2025-05-24T14:30:00.000Z",
+          "note": "Мастер приступил к ремонту",
+          "public": true
+        },
+        {
+          "status": "ready",
+          "label": "Готово",
+          "at": "2025-05-24T15:00:00.000Z",
+          "note": "Ремонт завершён, можно забирать",
+          "public": true
+        },
+        {
+          "status": "completed",
+          "label": "Выдан",
+          "at": "2025-05-24T16:00:00.000Z",
+          "note": "Устройство выдано клиенту, акт и гарантия 90 дней",
+          "public": true
+        }
+      ]
+    }
+  ]
+}
