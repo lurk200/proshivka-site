@@ -5,7 +5,10 @@ import ThemeToggle from '../ui/ThemeToggle';
 import { HeaderNavDesktop, HeaderNavMobile } from './HeaderNav';
 import BrandWordmark from './BrandWordmark';
 import { useCms } from '../../context/CmsContext';
-import { SocialIconButton, SocialLinksRow } from '../ui/SocialLinks';
+import { SocialIconButton } from '../ui/SocialLinks';
+
+const iconBtnClass =
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 text-[var(--text-primary)] transition-colors hover:border-[#84CC16]/30 hover:text-[#84CC16]';
 
 export default function Header() {
   const { cmsData } = useCms();
@@ -38,51 +41,52 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-[var(--border-subtle)] transition-colors duration-500 ease-premium pt-[env(safe-area-inset-top,0px)]"
+      className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-subtle)] backdrop-blur-xl transition-colors duration-500 ease-premium pt-[env(safe-area-inset-top,0px)]"
       style={{ background: 'var(--glass-bg)' }}
     >
-      <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between gap-1.5 px-3 sm:h-20 sm:gap-3 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:h-[4.5rem] sm:gap-3 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="min-w-0 shrink rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84CC16]/50"
+          className="min-w-0 flex-1 overflow-hidden rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#84CC16]/50 sm:flex-none"
           aria-label={`${company.name} — ${company.descriptor}`}
         >
-          <BrandWordmark
-            name={company.name}
-            tagline={company.brandTagline}
-            compact
-            className="sm:hidden"
-          />
-          <BrandWordmark
-            name={company.name}
-            tagline={company.brandTagline}
-            className="hidden sm:inline-flex"
-          />
+          <BrandWordmark name={company.name} tagline={company.brandTagline} />
         </Link>
 
-        <div className="hidden lg:flex flex-1 items-center justify-center px-2 min-w-0">
+        <div className="hidden min-w-0 flex-1 items-center justify-center px-2 lg:flex">
           <HeaderNavDesktop />
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          <HeaderNavMobile />
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <HeaderNavMobile phone={company.phone} phoneHref={phoneHref} contacts={activeContacts} />
+
+          {/* Телефон: на телефоне только иконка */}
+          <a
+            href={phoneHref}
+            className={`${iconBtnClass} md:hidden`}
+            aria-label={`Позвонить: ${company.phone}`}
+          >
+            <Phone className="h-4 w-4 text-[#84CC16]" strokeWidth={1.5} />
+          </a>
+
+          {/* Телефон + мессенджеры: планшет и десктоп до lg */}
           {activeContacts.length > 0 ? (
             <div
               ref={contactRef}
-              className="group/contact flex items-center rounded-xl border border-transparent transition-colors duration-200 hover:border-[#84CC16]/30 hover:bg-[var(--bg-surface)]/60 focus-within:border-[#84CC16]/30 focus-within:bg-[var(--bg-surface)]/60"
+              className="group/contact hidden items-center rounded-xl border border-transparent transition-colors duration-200 hover:border-[#84CC16]/30 hover:bg-[var(--bg-surface)]/60 focus-within:border-[#84CC16]/30 focus-within:bg-[var(--bg-surface)]/60 md:flex"
             >
               <a
                 href={phoneHref}
-                className="inline-flex min-w-0 items-center gap-1.5 px-1.5 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:text-[#84CC16] transition-colors sm:gap-2 sm:px-2.5 sm:text-[13px]"
+                className="inline-flex min-w-0 items-center gap-2 px-2.5 py-1.5 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#84CC16]"
                 aria-label={`Позвонить: ${company.phone}`}
               >
-                <Phone className="w-4 h-4 text-[#84CC16] shrink-0" strokeWidth={1.5} />
-                <span className="hidden min-[400px]:inline truncate max-w-[7rem] sm:max-w-none">{company.phone}</span>
+                <Phone className="h-4 w-4 shrink-0 text-[#84CC16]" strokeWidth={1.5} />
+                <span className="hidden lg:inline">{company.phone}</span>
               </a>
 
               <button
                 type="button"
-                className="hidden min-[400px]:flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:text-[#84CC16] md:hidden"
+                className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:text-[#84CC16] lg:hidden"
                 aria-expanded={mobileOpen}
                 aria-label={mobileOpen ? 'Скрыть мессенджеры' : 'Показать мессенджеры'}
                 onClick={() => setMobileOpen((open) => !open)}
@@ -96,10 +100,7 @@ export default function Header() {
               <div
                 className={`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-out ${mobileOpen ? messengersExpanded : messengersCollapsed}`}
               >
-                <span
-                  className="hidden h-4 w-px shrink-0 bg-[var(--border-medium)] sm:block"
-                  aria-hidden
-                />
+                <span className="hidden h-4 w-px shrink-0 bg-[var(--border-medium)] lg:block" aria-hidden />
                 {activeContacts.map((contact) => (
                   <SocialIconButton key={contact.type} contact={contact} />
                 ))}
@@ -108,17 +109,17 @@ export default function Header() {
           ) : (
             <a
               href={phoneHref}
-              className="inline-flex min-w-0 items-center gap-1.5 rounded-xl border border-transparent px-2 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:border-[#84CC16]/30 hover:text-[#84CC16] transition-colors sm:gap-2 sm:px-3 sm:text-[13px]"
+              className="hidden items-center gap-2 rounded-xl border border-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:border-[#84CC16]/30 hover:text-[#84CC16] md:inline-flex"
               aria-label={`Позвонить: ${company.phone}`}
             >
-              <Phone className="w-4 h-4 text-[#84CC16] shrink-0" strokeWidth={1.5} />
-              <span className="truncate max-w-[9.5rem] sm:max-w-none">{company.phone}</span>
+              <Phone className="h-4 w-4 shrink-0 text-[#84CC16]" strokeWidth={1.5} />
+              <span className="hidden lg:inline">{company.phone}</span>
             </a>
           )}
 
-          <span className="hidden min-[400px]:inline-flex">
+          <div className="hidden sm:block">
             <ThemeToggle />
-          </span>
+          </div>
         </div>
       </div>
     </header>

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, Phone, X } from 'lucide-react';
 import { useCms } from '../../context/CmsContext';
 import ThemeToggle from '../ui/ThemeToggle';
+import { SocialIconButton } from '../ui/SocialLinks';
 
 const CLOSE_DELAY_MS = 220;
 
@@ -166,7 +167,7 @@ export function HeaderNavDesktop() {
   );
 }
 
-export function HeaderNavMobile() {
+export function HeaderNavMobile({ phone, phoneHref, contacts = [] }) {
   const serviceItems = useServiceItems();
   const headerLinks = useHeaderLinks();
   const location = useLocation();
@@ -213,11 +214,35 @@ export function HeaderNavMobile() {
             onClick={closeAll}
           />
           <nav
-            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-[var(--border-subtle)] backdrop-blur-xl px-4 py-4 sm:top-20 lg:hidden"
+            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto border-b border-[var(--border-subtle)] backdrop-blur-xl px-4 py-4 sm:top-[4.5rem] lg:hidden"
             aria-label="Мобильное меню"
             style={{ background: 'var(--glass-bg)' }}
           >
             <div className="mx-auto max-w-7xl space-y-1">
+              {phoneHref ? (
+                <a
+                  href={phoneHref}
+                  onClick={closeAll}
+                  className="mb-2 flex items-center gap-3 rounded-xl border border-[#84CC16]/25 bg-[#84CC16]/5 px-3 py-3 text-[var(--text-primary)] hover:bg-[#84CC16]/10"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#84CC16]/15 text-[#84CC16]">
+                    <Phone className="h-4 w-4" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[11px] text-[var(--text-muted)]">Позвонить</span>
+                    <span className="block text-[14px] font-medium tabular-nums">{phone}</span>
+                  </span>
+                </a>
+              ) : null}
+
+              {contacts.length > 0 ? (
+                <div className="mb-2 flex flex-wrap gap-2 px-1">
+                  {contacts.map((contact) => (
+                    <SocialIconButton key={contact.type} contact={contact} />
+                  ))}
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 onClick={() => setMobileServicesOpen((open) => !open)}
@@ -256,7 +281,7 @@ export function HeaderNavMobile() {
                 );
               })}
 
-              <div className="flex min-[400px]:hidden items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 px-3 py-2.5 mt-2">
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 px-3 py-2.5 sm:hidden">
                 <span className="text-[13px] font-medium text-[var(--text-secondary)]">Тема оформления</span>
                 <ThemeToggle />
               </div>
