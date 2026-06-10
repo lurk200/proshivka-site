@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { fetchSiteCms, saveSiteCms } from '../api/cmsApi';
 import {
   buildCmsData,
   CMS_UPDATED_EVENT,
@@ -9,10 +10,45 @@ import {
   saveCmsContent,
 } from '../data/cmsStore';
 
+const STORAGE_KEY = 'proshivka-cms-content';
+
 const CmsContext = createContext(null);
 
 export function CmsProvider({ children }) {
-  const [content, setContent] = useState(() => loadCmsContent());
+  const [content, setContent] = useState(() => getDefaultCmsContent());
+  const [ready, setReady] = useState(false);
+  const [source, setSource] = useState('default');
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const data = await fetchSiteCms(controller.signal);
+        if (data?.content) {
+          if (!data.persisted && typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) {
+            const local = loadCmsContent();
+            setContent(local);
+            setSource('migrated');
+            saveSiteCms(local).catch(() => {});
+            return;
+          }
+          setContent(data.content);
+          setSource('server');
+          return;
+        }
+      } catch {
+        // fallback below
+      }
+
+      setContent(loadCmsContent());
+      setSource('local');
+    })().finally(() => {
+      if (!controller.signal.aborted) setReady(true);
+    });
+
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const sync = () => setContent(loadCmsContent());
@@ -26,6 +62,10 @@ export function CmsProvider({ children }) {
     const updated = typeof next === 'function' ? next(content) : next;
     setContent(updated);
     saveCmsContent(updated);
+
+    saveSiteCms(updated).catch(() => {
+      // локальная копия уже сохранена; сервер недоступен только в dev/offline
+    });
   }, [content]);
 
   const updatePage = useCallback(
@@ -41,6 +81,7 @@ export function CmsProvider({ children }) {
   const resetContent = useCallback(() => {
     const defaults = resetCmsContent();
     setContent(defaults);
+    saveSiteCms(defaults).catch(() => {});
     return defaults;
   }, []);
 
@@ -57,6 +98,8 @@ export function CmsProvider({ children }) {
     () => ({
       content,
       cmsData,
+      ready,
+      source,
       updateContent,
       updatePage,
       resetContent,
@@ -64,7 +107,7 @@ export function CmsProvider({ children }) {
       defaults: getDefaultCmsContent(),
       PAGE_KEYS,
     }),
-    [content, cmsData, updateContent, updatePage, resetContent, resetPage],
+    [content, cmsData, ready, source, updateContent, updatePage, resetContent, resetPage],
   );
 
   return <CmsContext.Provider value={value}>{children}</CmsContext.Provider>;

@@ -335,7 +335,7 @@ function normalizeSiteContent(raw) {
   };
 }
 
-function migrateContent(raw) {
+export function migrateContent(raw) {
   if (!raw || typeof raw !== 'object') return structuredClone(CMS_SITE);
 
   if (raw.home && raw.softwareRepair) {
