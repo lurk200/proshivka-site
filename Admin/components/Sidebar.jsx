@@ -12,6 +12,7 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 
 const GENERAL_NAV = [
   { to: '/admin', label: 'Обзор', icon: LayoutDashboard },
+  { to: '/admin/analytics', label: 'Аналитика сайта', icon: BarChart2 },
   { to: '/admin/company', label: 'Компания', icon: Building2 },
 ];
 
@@ -45,7 +46,6 @@ const SITE_NAV = [
 ];
 
 const SETTINGS_NAV = [
-  { to: '/admin/analytics', label: 'Аналитика сайта', icon: BarChart2 },
   { to: '/admin/settings/notifications', label: 'Уведомления', icon: Bell },
 ];
 

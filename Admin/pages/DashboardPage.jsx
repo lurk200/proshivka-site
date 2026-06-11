@@ -4,7 +4,7 @@ import {
   ArrowRight, Building2, Calculator, ClipboardList, Clock, FileText,
   FolderOpen, Globe, Image, Layers, Lightbulb, Megaphone, Navigation,
   Scale, Send, Sparkles, Terminal, Wrench, LayoutTemplate, RefreshCw,
-  MapPin, TrendingUp, Package, Activity,
+  MapPin, TrendingUp, Package, Activity, BarChart2,
 } from 'lucide-react';
 import { useCms } from '../../src/context/CmsContext';
 import { PAGE_KEYS } from '../../src/data/cmsStore';
@@ -13,9 +13,14 @@ import CmsBackupPanel from '../components/CmsBackupPanel';
 import { useChangeHistory } from '../hooks/useChangeHistory';
 import { fetchOrdersAdmin } from '../../src/api/ordersApi';
 
+function adminHeaders() {
+  return { 'X-Admin-Password': sessionStorage.getItem('proshivka-admin-api-key') || '' };
+}
+
 // ─── Quick Links ──────────────────────────────────────────────────────────
 
 const QUICK_LINKS = [
+  { to: '/admin/analytics', label: 'Аналитика сайта', icon: BarChart2, group: 'Статистика' },
   { to: '/admin/seo', label: 'SEO', icon: Globe, group: 'Продвижение' },
   { to: '/admin/company', label: 'Компания', icon: Building2, group: 'Контент' },
   { to: '/admin/main/banners', label: 'Баннеры главной', icon: Image, group: 'Главная' },
@@ -75,6 +80,7 @@ export default function DashboardPage() {
   const [recentOrders, setRecentOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [history, setHistory] = useState([]);
+  const [analyticsSnap, setAnalyticsSnap] = useState(null);
 
   const softwarePage = content[PAGE_KEYS.SOFTWARE_REPAIR] ?? {};
   const servicesCount = softwarePage.services?.featured?.length ?? 0;
@@ -102,6 +108,10 @@ export default function DashboardPage() {
   useEffect(() => {
     loadOrders();
     setHistory(getHistory(8));
+    fetch('/api/admin/analytics', { headers: adminHeaders() })
+      .then(r => r.json())
+      .then(d => setAnalyticsSnap(d))
+      .catch(() => {});
   }, []);
 
   return (
@@ -155,6 +165,47 @@ export default function DashboardPage() {
           sub="На главной"
         />
       </div>
+
+      {/* ── Analytics widget ─────────────────────────────────────── */}
+      <AdminCard className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#84CC16]/15 flex items-center justify-center shrink-0">
+              <BarChart2 className="w-4 h-4 text-[#84CC16]" strokeWidth={1.75} />
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-white">Аналитика сайта</p>
+              {analyticsSnap ? (
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-[12px] text-[#9ca3af]">
+                    Сегодня: <span className="text-white font-medium">{analyticsSnap.todayViews ?? 0}</span> просм.
+                  </span>
+                  <span className="text-[12px] text-[#9ca3af]">
+                    За месяц: <span className="text-white font-medium">{(analyticsSnap.monthViews ?? 0).toLocaleString('ru')}</span>
+                  </span>
+                  {(analyticsSnap.onlineNow ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 text-[12px] text-[#84CC16]">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[#84CC16] animate-ping opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#84CC16]" />
+                      </span>
+                      {analyticsSnap.onlineNow} онлайн
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#4b5563] mt-0.5">Загрузка статистики…</p>
+              )}
+            </div>
+          </div>
+          <Link
+            to="/admin/analytics"
+            className="flex items-center gap-1.5 text-[12px] text-[#84CC16] hover:underline shrink-0"
+          >
+            Открыть <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </AdminCard>
 
       {/* ── Secondary Stats ───────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3 mb-8">
