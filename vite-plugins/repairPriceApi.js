@@ -26,6 +26,8 @@ import {
   getPopular,
   getStats,
   getGaps,
+  getTrending,
+  getDeviceCoverage,
 } from '../server/prise/searchAnalyticsStore.js';
 
 function sendJson(res, status, body) {
@@ -201,9 +203,11 @@ function registerRepairPriceApi(server) {
           try {
             const services = listServices({ archived: undefined });
             const popular = getPopular(20);
-            const gaps = getGaps(services, 15);
+            const gaps = getGaps(services, 20);
             const stats = getStats();
-            return sendJson(res, 200, { popular, gaps, stats });
+            const trending = getTrending(20);
+            const deviceCoverage = getDeviceCoverage(services, 20);
+            return sendJson(res, 200, { popular, gaps, stats, trending, deviceCoverage });
           } catch (e) {
             return sendJson(res, 500, { error: String(e.message) });
           }

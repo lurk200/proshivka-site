@@ -195,6 +195,157 @@ export function getSearchDemand(limit = 50) {
   }));
 }
 
+// ── Part type detection (maps query to partType ID) ──────────────────────────
+
+const PART_TYPE_PATTERNS = [
+  // Multi-word / specific patterns first
+  { pt: 'camera-glass', re: /стекло\s*камер|линза\s*камер|glass.*cam|cam.*glass/ },
+  { pt: 'face-id',      re: /face.?id|сканер\s*лица|биометрия\s*iphone/ },
+  { pt: 'back-glass',   re: /задняя\s*крышка|задняя\s*панель|back.?glass|стекло\s*корпус|крышка\s*корпус/ },
+  { pt: 'ear-speaker',  re: /слуховой\s*динамик|разговорный\s*динамик|гарнитурн/ },
+  { pt: 'water',        re: /после\s*воды|залит|вода\s*попал|восстановление.*вод|water.?damage/ },
+  { pt: 'port',         re: /разъём\s*зарядк|гнездо\s*зарядк|порт\s*зарядк|charging.?port|не\s*заряж/ },
+  // Single keywords
+  { pt: 'display',      re: /дисплей|экран|матрица|тачскрин|lcd|oled/ },
+  { pt: 'glass',        re: /стекло|glass/ },
+  { pt: 'battery',      re: /аккумулят|батаре|акб\b|battery|не\s*держит\s*заряд/ },
+  { pt: 'port',         re: /разъём|разъем|lightning|usb.?c|type.?c|гнездо|не\s*заряж/ },
+  { pt: 'housing',      re: /корпус|рамка|frame|housing/ },
+  { pt: 'back-glass',   re: /крышк/ },
+  { pt: 'camera',       re: /камер|camera|объектив|вспышк/ },
+  { pt: 'microphone',   re: /микрофон|\bmic\b/ },
+  { pt: 'speaker',      re: /динамик|колонк|speaker|полифон/ },
+  { pt: 'vibration',    re: /вибро|vibro|taptic|нет\s*вибр/ },
+  { pt: 'button',       re: /кнопк|button|volume|home\b|включени|блокировк/ },
+  { pt: 'flex',         re: /шлейф|\bflex\b/ },
+  { pt: 'keyboard',     re: /клавиатур|keyboard/ },
+  { pt: 'diagnostic',   re: /диагностик|не\s*включает|не\s*работает|перегрев/ },
+];
+
+export function detectPartType(query) {
+  const q = query.toLowerCase().trim();
+  for (const { pt, re } of PART_TYPE_PATTERNS) {
+    if (re.test(q)) return pt;
+  }
+  return 'other';
+}
+
+// ── Suggested service name builder ────────────────────────────────────────────
+
+const PART_TYPE_FOR_NAME = {
+  display:       'дисплея',
+  glass:         'стекла дисплея',
+  battery:       'аккумулятора',
+  port:          'разъёма зарядки',
+  'back-glass':  'задней крышки',
+  housing:       'корпуса',
+  camera:        'камеры',
+  'camera-glass':'стекла камеры',
+  speaker:       'динамика',
+  'ear-speaker': 'слухового динамика',
+  microphone:    'микрофона',
+  'face-id':     'Face ID',
+  button:        'кнопок',
+  flex:          'шлейфа',
+  vibration:     'вибромотора',
+  keyboard:      'клавиатуры',
+  water:         'после воды',
+  diagnostic:    null,
+  other:         null,
+};
+const PART_TYPE_VERB = { 'face-id': 'Восстановление', water: 'Восстановление', diagnostic: 'Диагностика' };
+
+export function getSuggestedServiceName(partType, deviceModel) {
+  const verb = PART_TYPE_VERB[partType] ?? 'Замена';
+  const partName = PART_TYPE_FOR_NAME[partType];
+  if (partType === 'diagnostic') {
+    return deviceModel ? `Диагностика ${deviceModel}` : 'Диагностика';
+  }
+  return [verb, partName, deviceModel].filter(Boolean).join(' ');
+}
+
+// ── Brand from detected device name ──────────────────────────────────────────
+
+function brandFromDevice(device) {
+  if (!device) return null;
+  const d = device.toLowerCase();
+  if (/iphone|ipad|macbook|apple/.test(d)) return 'Apple';
+  if (/samsung|galaxy/.test(d)) return 'Samsung';
+  if (/xiaomi|redmi|poco/.test(d)) return 'Xiaomi';
+  if (/huawei/.test(d)) return 'Huawei';
+  if (/honor/.test(d)) return 'Honor';
+  if (/oppo/.test(d)) return 'OPPO';
+  if (/realme/.test(d)) return 'Realme';
+  if (/motorola|moto/.test(d)) return 'Motorola';
+  if (/nokia/.test(d)) return 'Nokia';
+  return null;
+}
+
+// ── Device coverage: devices with high demand but few services ────────────────
+
+export function getDeviceCoverage(services, limit = 20) {
+  const data = read();
+  if (!data.queries.length) return [];
+
+  // Aggregate query counts by detected device model
+  const byDevice = {};
+  for (const entry of data.queries) {
+    const device = detectDeviceModel(entry.q);
+    if (!device) continue;
+    if (!byDevice[device]) byDevice[device] = { queryCount: 0, partTypes: {} };
+    byDevice[device].queryCount += entry.count;
+    const pt = detectPartType(entry.q);
+    byDevice[device].partTypes[pt] = (byDevice[device].partTypes[pt] ?? 0) + entry.count;
+  }
+
+  return Object.entries(byDevice)
+    .filter(([, { queryCount }]) => queryCount >= 3)
+    .map(([device, { queryCount, partTypes }]) => {
+      const brand = brandFromDevice(device);
+      // Count branded services for this device
+      const brandedServices = brand
+        ? services.filter(s => s.brand && s.brand.toLowerCase() === brand.toLowerCase())
+        : [];
+      const existingPartTypes = new Set(brandedServices.map(s => s.partType));
+
+      // Part types that are being searched but have no branded service
+      const missing = Object.entries(partTypes)
+        .filter(([pt]) => pt !== 'other' && !existingPartTypes.has(pt))
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([pt]) => pt);
+
+      return { device, brand, queryCount, serviceCount: brandedServices.length, missing };
+    })
+    .sort((a, b) => {
+      const ratioA = a.serviceCount > 0 ? a.queryCount / a.serviceCount : a.queryCount * 10;
+      const ratioB = b.serviceCount > 0 ? b.queryCount / b.serviceCount : b.queryCount * 10;
+      return ratioB - ratioA;
+    })
+    .slice(0, limit);
+}
+
+// ── Trending: queries active in the last 7 days ───────────────────────────────
+
+export function getTrending(limit = 20) {
+  const data = read();
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  return data.queries
+    .filter(e => e.lastAt && e.lastAt >= weekAgo && e.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map(entry => ({
+      q: entry.q,
+      count: entry.count,
+      conversions: entry.conversions || 0,
+      lastAt: entry.lastAt,
+      partType: detectPartType(entry.q),
+      deviceModel: detectDeviceModel(entry.q),
+    }));
+}
+
+// ── Gaps: queries with no matching service (enhanced) ────────────────────────
+
 export function getGaps(services, limit = 10) {
   const data = read();
   if (!data.queries.length) return [];
@@ -208,5 +359,18 @@ export function getGaps(services, limit = 10) {
       );
     })
     .slice(0, limit)
-    .map(entry => ({ ...entry, conversions: entry.conversions || 0 }));
+    .map(entry => {
+      const partType = detectPartType(entry.q);
+      const deviceModel = detectDeviceModel(entry.q);
+      return {
+        q: entry.q,
+        count: entry.count,
+        conversions: entry.conversions || 0,
+        lastAt: entry.lastAt,
+        partType,
+        deviceModel,
+        brand: brandFromDevice(deviceModel),
+        suggestedName: getSuggestedServiceName(partType, deviceModel),
+      };
+    });
 }

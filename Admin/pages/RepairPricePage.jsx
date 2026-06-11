@@ -14,8 +14,8 @@ import {
   fetchAdminSearchAnalytics, markServicesChecked,
 } from '../../src/prise/api/repairPriceApi';
 import {
-  Archive, BarChart2, Check, ChevronDown, Download, Edit2, ExternalLink,
-  Package, Plus, RefreshCw, Search, Star, Trash2, TrendingUp, X,
+  Activity, Archive, BarChart2, Check, ChevronDown, Download, Edit2, ExternalLink,
+  Package, Plus, RefreshCw, Search, Smartphone, Star, Trash2, TrendingUp, X,
   AlertTriangle, Building2, RotateCcw, Link2,
 } from 'lucide-react';
 
@@ -93,36 +93,6 @@ function freshnessLabel(status) {
   if (status === 'fresh') return 'Проверено <30 дней';
   if (status === 'stale') return 'Проверено 30–90 дней';
   return 'Не проверялось >90 дней';
-}
-
-// guess part type and device from a search query
-function guessPartType(q) {
-  const s = q.toLowerCase();
-  if (/стекло камер/.test(s)) return 'camera-glass';
-  if (/face.?id/.test(s)) return 'face-id';
-  if (/дисплей|экран|матрица/.test(s)) return 'display';
-  if (/стекло/.test(s)) return 'glass';
-  if (/аккум|батар|акб/.test(s)) return 'battery';
-  if (/разъём|зарядк|usb|lightning|type.?c/.test(s)) return 'port';
-  if (/крышк/.test(s)) return 'back-glass';
-  if (/корпус/.test(s)) return 'housing';
-  if (/камер/.test(s)) return 'camera';
-  if (/слух|разговор/.test(s)) return 'ear-speaker';
-  if (/микрофон/.test(s)) return 'microphone';
-  if (/динамик|полифон/.test(s)) return 'speaker';
-  if (/кнопк/.test(s)) return 'button';
-  if (/шлейф/.test(s)) return 'flex';
-  if (/вибр/.test(s)) return 'vibration';
-  if (/клавиат/.test(s)) return 'keyboard';
-  if (/вода|влаг/.test(s)) return 'water';
-  if (/диагност/.test(s)) return 'diagnostic';
-  return 'other';
-}
-function guessDeviceType(q) {
-  const s = q.toLowerCase();
-  if (/ноутб|laptop/.test(s)) return 'laptop';
-  if (/планш|tablet|ipad/.test(s)) return 'tablet';
-  return 'smartphone';
 }
 
 // ── Shared small components ───────────────────────────────────────────────────
@@ -434,7 +404,7 @@ function CustomerPrice({ svc, categorySettings }) {
 
 // ── Services Tab ──────────────────────────────────────────────────────────────
 
-function ServicesTab({ suppliers, categorySettings }) {
+function ServicesTab({ suppliers, categorySettings, pendingCreate, onPendingConsumed }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -448,7 +418,6 @@ function ServicesTab({ suppliers, categorySettings }) {
   const [addModal, setAddModal] = useState(null); // null | {} | service object
   const [historyItem, setHistoryItem] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [gaps, setGaps] = useState([]);
 
   const debounceRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -480,12 +449,13 @@ function ServicesTab({ suppliers, categorySettings }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Load demand gaps
+  // Open service form when parent requests a create-from-demand
   useEffect(() => {
-    fetchAdminSearchAnalytics()
-      .then(d => setGaps(d.gaps ?? []))
-      .catch(() => {});
-  }, []);
+    if (pendingCreate) {
+      setAddModal({ ...EMPTY_SVC_FORM, ...pendingCreate });
+      onPendingConsumed?.();
+    }
+  }, [pendingCreate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Client-side filters
   const visibleItems = useMemo(() => {
@@ -802,34 +772,6 @@ function ServicesTab({ suppliers, categorySettings }) {
       <p className="text-[11px] text-[#4b5563]">
         {visibleItems.length} услуг · Клик по закупке — быстрое редактирование · 🟢 &lt;30д 🟡 30–90д 🔴 &gt;90д
       </p>
-
-      {/* Demand gaps */}
-      {gaps.length > 0 && (
-        <AdminCard className="mt-2">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-amber-400" />
-            <h3 className="text-[14px] font-semibold text-white">Что ищут — услуги нет</h3>
-            <span className="text-[11px] text-[#6b7280]">из аналитики поиска</span>
-          </div>
-          <div className="space-y-2">
-            {gaps.slice(0, 8).map(item => (
-              <div key={item.q} className="flex items-center gap-3 py-1.5 border-b border-white/[0.04] last:border-0">
-                <p className="flex-1 text-[13px] text-amber-300 truncate">{item.q}</p>
-                <span className="text-[12px] text-[#6b7280] tabular-nums shrink-0">{item.count}×</span>
-                <button type="button"
-                  onClick={() => setAddModal({
-                    name: item.q.charAt(0).toUpperCase() + item.q.slice(1),
-                    partType: guessPartType(item.q),
-                    deviceType: guessDeviceType(item.q),
-                  })}
-                  className="shrink-0 h-7 px-2.5 rounded-lg bg-[#84CC16]/10 border border-[#84CC16]/20 text-[#84CC16] text-[11px] font-medium hover:bg-[#84CC16]/20 transition-colors flex items-center gap-1">
-                  <Plus className="w-3 h-3" />Создать
-                </button>
-              </div>
-            ))}
-          </div>
-        </AdminCard>
-      )}
 
       {/* Modals */}
       {addModal !== null && (
@@ -1217,12 +1159,248 @@ function SuppliersTab() {
   );
 }
 
+// ── Demand / Analytics Tab ────────────────────────────────────────────────────
+
+function pluralCount(n) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} поиск`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${n} поиска`;
+  return `${n} поисков`;
+}
+
+function DemandTab({ onCreateService }) {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
+    try { setAnalytics(await fetchAdminSearchAnalytics()); }
+    catch (e) { setError(e.message || 'Ошибка загрузки'); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-2xl bg-white/[0.02] animate-pulse border border-white/[0.04]" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminCard>
+        <div className="flex items-center gap-2 text-amber-400 py-4">
+          <AlertTriangle className="w-4 h-4 shrink-0" />{error}
+          <button type="button" onClick={load} className="ml-2 text-[12px] underline">Повторить</button>
+        </div>
+      </AdminCard>
+    );
+  }
+
+  const { gaps = [], trending = [], deviceCoverage = [], stats = {} } = analytics ?? {};
+
+  return (
+    <div className="space-y-6">
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Уникальных запросов', value: stats.totalUnique ?? 0, icon: Search },
+          { label: 'Всего поисков', value: stats.countTotal ?? 0, icon: Activity },
+          { label: 'За неделю', value: stats.countWeek ?? 0, icon: TrendingUp },
+          { label: 'Конверсий', value: stats.totalConversions ?? 0, icon: BarChart2 },
+        ].map(({ label, value, icon: Icon }) => (
+          <AdminCard key={label} className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Icon className="w-3.5 h-3.5 text-[#84CC16]" />
+              <p className="text-[10px] text-[#6b7280] uppercase tracking-wide font-mono">{label}</p>
+            </div>
+            <p className="text-[20px] font-bold text-white tabular-nums">{value.toLocaleString('ru')}</p>
+          </AdminCard>
+        ))}
+      </div>
+
+      {/* ── Gaps: queries with no matching service ── */}
+      <AdminCard>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <h2 className="text-[14px] font-semibold text-white">Спрос без услуг</h2>
+            <span className="text-[11px] text-[#6b7280]">{gaps.length} запросов без подходящей услуги</span>
+          </div>
+          <button type="button" onClick={load}
+            className="flex items-center gap-1 text-[12px] text-[#6b7280] hover:text-white transition-colors">
+            <RefreshCw className="w-3.5 h-3.5" />Обновить
+          </button>
+        </div>
+
+        {gaps.length === 0 ? (
+          <p className="text-[13px] text-[#4b5563] py-4 text-center">
+            Все популярные запросы покрыты услугами 🎉
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-white/[0.04] text-left">
+                  <th className="pb-2 pr-4 font-medium text-[#6b7280] whitespace-nowrap">Запрос</th>
+                  <th className="pb-2 pr-4 font-medium text-[#6b7280] hidden sm:table-cell">Тип детали</th>
+                  <th className="pb-2 pr-4 font-medium text-[#6b7280] hidden md:table-cell">Устройство</th>
+                  <th className="pb-2 pr-4 font-medium text-[#6b7280] text-right">Поисков</th>
+                  <th className="pb-2 w-28" />
+                </tr>
+              </thead>
+              <tbody>
+                {gaps.map(item => (
+                  <tr key={item.q} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                    <td className="py-2.5 pr-4">
+                      <p className="font-medium text-amber-300 leading-snug">{item.q}</p>
+                      {item.suggestedName && item.suggestedName !== item.q && (
+                        <p className="text-[11px] text-[#4b5563] mt-0.5">{item.suggestedName}</p>
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-4 hidden sm:table-cell">
+                      {item.partType && item.partType !== 'other' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white/[0.05] text-[#9ca3af] font-medium">
+                          {PART_TYPE_LABELS[item.partType] ?? item.partType}
+                        </span>
+                      ) : (
+                        <span className="text-[#4b5563]">—</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-4 hidden md:table-cell text-[#6b7280] whitespace-nowrap">
+                      {item.deviceModel ?? '—'}
+                    </td>
+                    <td className="py-2.5 pr-4 text-right tabular-nums font-medium text-white">
+                      {item.count.toLocaleString('ru')}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <button type="button"
+                        onClick={() => onCreateService({
+                          name: item.suggestedName || (item.q.charAt(0).toUpperCase() + item.q.slice(1)),
+                          partType: item.partType || 'other',
+                          brand: item.brand || null,
+                          popularity: Math.min(99, Math.round(40 + item.count * 2)),
+                        })}
+                        className="h-7 px-2.5 rounded-lg bg-[#84CC16]/10 border border-[#84CC16]/20 text-[#84CC16] text-[11px] font-medium hover:bg-[#84CC16]/20 transition-colors flex items-center gap-1 ml-auto">
+                        <Plus className="w-3 h-3" />Создать
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </AdminCard>
+
+      {/* ── Device coverage ── */}
+      {deviceCoverage.length > 0 && (
+        <AdminCard>
+          <div className="flex items-center gap-2 mb-4">
+            <Smartphone className="w-4 h-4 text-blue-400" />
+            <h2 className="text-[14px] font-semibold text-white">Устройства с малым каталогом</h2>
+            <span className="text-[11px] text-[#6b7280]">много запросов — мало услуг</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {deviceCoverage.slice(0, 12).map(item => (
+              <div key={item.device}
+                className="rounded-xl border border-white/[0.06] bg-[#0c0d10]/50 p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="text-[13.5px] font-semibold text-white leading-snug">{item.device}</p>
+                  {item.brand && (
+                    <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] text-[#6b7280]">
+                      {item.brand}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mb-2 text-[12px]">
+                  <span className="text-amber-400 font-medium">{pluralCount(item.queryCount)}</span>
+                  <span className="text-[#4b5563]">·</span>
+                  <span className="text-[#9ca3af]">{item.serviceCount} {item.serviceCount === 1 ? 'услуга' : item.serviceCount < 5 ? 'услуги' : 'услуг'}</span>
+                </div>
+                {item.missing.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] text-[#4b5563] font-mono uppercase tracking-wide">Нет услуг:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {item.missing.map(pt => (
+                        <button key={pt} type="button"
+                          onClick={() => onCreateService({
+                            name: `${PART_TYPE_LABELS[pt] ?? pt} ${item.device}`,
+                            partType: pt,
+                            brand: item.brand || null,
+                            popularity: Math.min(95, Math.round(item.queryCount / (item.missing.length || 1))),
+                          })}
+                          className="text-[11px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors flex items-center gap-1">
+                          <Plus className="w-2.5 h-2.5" />{PART_TYPE_LABELS[pt] ?? pt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </AdminCard>
+      )}
+
+      {/* ── Trending ── */}
+      {trending.length > 0 && (
+        <AdminCard>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-[14px] font-semibold text-white">Растущие запросы</h2>
+            <span className="text-[11px] text-[#6b7280]">активны за последние 7 дней</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {trending.slice(0, 20).map(item => (
+              <div key={item.q}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-[#0c0d10]/40 border border-white/[0.04]">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-white truncate">{item.q}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {item.partType && item.partType !== 'other' && (
+                      <span className="text-[10px] text-[#6b7280]">{PART_TYPE_LABELS[item.partType] ?? item.partType}</span>
+                    )}
+                    {item.deviceModel && (
+                      <span className="text-[10px] text-[#4b5563]">{item.deviceModel}</span>
+                    )}
+                  </div>
+                </div>
+                <span className="shrink-0 text-[12px] font-bold text-emerald-400 tabular-nums">
+                  {item.count}×
+                </span>
+              </div>
+            ))}
+          </div>
+        </AdminCard>
+      )}
+
+      {gaps.length === 0 && deviceCoverage.length === 0 && trending.length === 0 && (
+        <AdminCard>
+          <div className="py-10 text-center text-[#6b7280]">
+            <BarChart2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p>Данных пока нет. Как только клиенты начнут искать услуги, здесь появится аналитика.</p>
+          </div>
+        </AdminCard>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RepairPricePage() {
   const { settings, setSettings, save, reset, saving, saved, saveError } = useRepairSettings();
   const [tab, setTab] = useState('services');
   const [suppliers, setSuppliers] = useState([]);
+  // Cross-tab: "create service" pre-fill coming from DemandTab
+  const [pendingCreate, setPendingCreate] = useState(null);
 
   useEffect(() => {
     fetchAdminSuppliers().then(setSuppliers).catch(() => {});
@@ -1246,10 +1424,17 @@ export default function RepairPricePage() {
     }));
   }, [setSettings]);
 
+  // Called from DemandTab when user clicks "Создать" on a gap/device
+  const handleCreateFromDemand = useCallback((prefill) => {
+    setPendingCreate(prefill);
+    setTab('services');
+  }, []);
+
   const tabs = [
     { id: 'services',   label: 'Услуги' },
     { id: 'markup',     label: 'Наценки' },
     { id: 'suppliers',  label: 'Поставщики' },
+    { id: 'demand',     label: 'Аналитика' },
   ];
 
   if (!settings) {
@@ -1271,7 +1456,12 @@ export default function RepairPricePage() {
       <AdminTabs tabs={tabs} active={tab} onChange={setTab} />
 
       {tab === 'services' && (
-        <ServicesTab suppliers={suppliers} categorySettings={categorySettings} />
+        <ServicesTab
+          suppliers={suppliers}
+          categorySettings={categorySettings}
+          pendingCreate={pendingCreate}
+          onPendingConsumed={() => setPendingCreate(null)}
+        />
       )}
 
       {tab === 'markup' && (
@@ -1287,6 +1477,10 @@ export default function RepairPricePage() {
       )}
 
       {tab === 'suppliers' && <SuppliersTab />}
+
+      {tab === 'demand' && (
+        <DemandTab onCreateService={handleCreateFromDemand} />
+      )}
     </>
   );
 }
