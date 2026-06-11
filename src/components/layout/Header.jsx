@@ -14,7 +14,7 @@ const iconBtnClass =
 export default function Header() {
   const { cmsData } = useCms();
   const { company } = cmsData;
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
   const activeContacts = (company.contacts ?? []).filter(
     (c) => c.url?.trim() && c.type !== 'viber',
   );

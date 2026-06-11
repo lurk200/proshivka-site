@@ -45,7 +45,7 @@ export default function WorksPage() {
   const published = getPublishedWorks(works);
   const categories = useMemo(() => getWorkCategories(works), [works]);
   const [filter, setFilter] = useState('all');
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
 
   const filtered =
     filter === 'all' ? published : published.filter((w) => w.category === filter);

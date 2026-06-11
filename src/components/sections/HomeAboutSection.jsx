@@ -19,7 +19,7 @@ export default function HomeAboutSection({ company }) {
   const carouselWorks = works.home?.showCarousel
     ? published.slice(0, works.home.carouselLimit || published.length)
     : [];
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
   const socialContacts = getActiveSocialContacts(company.contacts);
 
   return (

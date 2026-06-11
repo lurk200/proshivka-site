@@ -5,7 +5,7 @@ import { SocialIcon } from '../../components/icons/SocialIcons';
 export default function StickyMobileCta({ phone, contacts = [], mapUrl }) {
   const telegram = contacts.find((c) => c.type === 'telegram');
   const whatsapp = contacts.find((c) => c.type === 'whatsapp');
-  const telHref = phone ? `tel:${phone.replace(/\D/g, '').replace(/^8/, '7')}` : null;
+  const telHref = phone ? `tel:${phone.replace(/[^\d+]/g, '').replace(/^8/, '+7')}` : null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border-subtle)] bg-[var(--glass-bg)] px-3 py-3 backdrop-blur-xl md:hidden">
@@ -63,7 +63,7 @@ export default function StickyMobileCta({ phone, contacts = [], mapUrl }) {
 export function DesktopCta({ phone, contacts = [], mapUrl }) {
   const telegram = contacts.find((c) => c.type === 'telegram');
   const whatsapp = contacts.find((c) => c.type === 'whatsapp');
-  const telHref = phone ? `tel:${phone.replace(/\D/g, '').replace(/^8/, '7')}` : null;
+  const telHref = phone ? `tel:${phone.replace(/[^\d+]/g, '').replace(/^8/, '+7')}` : null;
 
   const btn =
     'inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-medium transition-all duration-300 ease-premium active:scale-[0.98]';

@@ -44,7 +44,7 @@ export default function SoftwareRepairPage() {
   const page = cmsData.softwareRepair;
   const template = cmsData.serviceTemplate;
   const { company } = cmsData;
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
   const telegramUrl = company.contacts?.find((c) => c.type === 'telegram')?.url;
   const symptoms = buildSymptoms(page.hero?.tags);
   const services = page.services?.featured ?? [];

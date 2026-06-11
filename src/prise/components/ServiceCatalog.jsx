@@ -155,7 +155,7 @@ function ServiceCard({ svc, phone }) {
       <div className="border-t border-[var(--border-subtle)] px-4 py-3">
         {phone ? (
           <a
-            href={`tel:${phone.replace(/\D/g, '')}`}
+            href={`tel:${phone.replace(/[^\d+]/g, '')}`}
             onClick={() => trackServiceCta(svc.name)}
             className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-[var(--text-primary)] transition-colors"
           >

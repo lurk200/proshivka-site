@@ -13,7 +13,7 @@ export default function WorkDetailPage() {
   const { cmsData } = useCms();
   const { works, company } = cmsData;
   const work = findWorkById(works, workId);
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
 
   if (!work || work.published === false) {
     return <Navigate to="/nashi-raboty" replace />;

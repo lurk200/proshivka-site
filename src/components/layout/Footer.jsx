@@ -9,7 +9,7 @@ const currentYear = new Date().getFullYear();
 export default function Footer() {
   const { cmsData } = useCms();
   const { company, mainHome, legal, siteNavigation } = cmsData;
-  const phoneHref = `tel:${company.phone.replace(/\D/g, '')}`;
+  const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
 
   return (
     <footer className="relative z-10 mt-auto border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]">

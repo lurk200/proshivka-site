@@ -83,7 +83,7 @@ export default function LegalDocumentPage() {
             <p className="text-[13px] text-[var(--text-muted)]">
               По вопросам, связанным с документом, свяжитесь с нами:{' '}
               <a
-                href={`tel:${cmsData.company.phone.replace(/\D/g, '')}`}
+                href={`tel:${cmsData.company.phone.replace(/[^\d+]/g, '')}`}
                 className="text-[#84CC16] hover:underline"
               >
                 {cmsData.company.phone}
