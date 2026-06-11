@@ -95,6 +95,7 @@ function migrateService(s) {
   return {
     laborCost: s.laborCost ?? DEFAULT_LABOR[s.partType] ?? 500,
     partCost: s.partCost ?? null,
+    purchasePrice: s.purchasePrice ?? null,
     lastChecked: s.lastChecked ?? s.updatedAt ?? NOW,
     ...s,
   };
@@ -103,9 +104,9 @@ function migrateService(s) {
 // ── Default data ──────────────────────────────────────────────────────────────
 
 const DEFAULT_SUPPLIERS = [
-  { id: 'sup_001', name: 'TagGSM', url: 'taggsmprof.ru', phone: '', rating: 5, note: 'Основной поставщик, интеграция через API', createdAt: NOW },
-  { id: 'sup_002', name: 'GSMops', url: 'gsmops.ru', phone: '', rating: 4, note: 'Дисплеи и аккумуляторы', createdAt: NOW },
-  { id: 'sup_003', name: 'Местный склад', url: '', phone: '', rating: 3, note: 'Наличие в городе', createdAt: NOW },
+  { id: 'sup_001', name: 'TagGSM', url: 'taggsmprof.ru', searchTemplate: '', lastPriceCheck: null, phone: '', rating: 5, note: 'Основной поставщик, интеграция через API', createdAt: NOW },
+  { id: 'sup_002', name: 'GSMops', url: 'gsmops.ru', searchTemplate: 'https://gsmops.ru/search/?query={query}', lastPriceCheck: null, phone: '', rating: 4, note: 'Дисплеи и аккумуляторы', createdAt: NOW },
+  { id: 'sup_003', name: 'Местный склад', url: '', searchTemplate: '', lastPriceCheck: null, phone: '', rating: 3, note: 'Наличие в городе', createdAt: NOW },
 ];
 
 const DEFAULT_SERVICES = [
@@ -469,6 +470,7 @@ export function createService(data) {
     priceTo: data.priceTo ?? null,
     laborCost: data.laborCost ?? DEFAULT_LABOR[data.partType] ?? 500,
     partCost: data.partCost ?? null,
+    purchasePrice: data.purchasePrice ?? null,
     duration: data.duration || '1–2 часа',
     hasExpress: data.hasExpress || false,
     expressMultiplier: data.expressMultiplier ?? 1.5,
@@ -493,14 +495,14 @@ export function updateService(id, patch) {
   const prev = items[idx];
   const now = new Date().toISOString();
 
-  const tracked = ['name', 'price', 'priceFrom', 'priceTo', 'laborCost', 'partCost', 'available', 'archived', 'category', 'deviceType', 'partType', 'supplierId', 'brand'];
+  const tracked = ['name', 'price', 'priceFrom', 'priceTo', 'laborCost', 'partCost', 'purchasePrice', 'available', 'archived', 'category', 'deviceType', 'partType', 'supplierId', 'brand'];
   const changes = {};
   for (const f of tracked) {
     if (patch[f] !== undefined && patch[f] !== prev[f]) changes[f] = { from: prev[f], to: patch[f] };
   }
 
   // Reset lastChecked when price is updated
-  const priceChanged = ['price', 'priceFrom', 'priceTo', 'laborCost', 'partCost'].some(f => patch[f] !== undefined);
+  const priceChanged = ['price', 'priceFrom', 'priceTo', 'laborCost', 'partCost', 'purchasePrice'].some(f => patch[f] !== undefined);
   const lastChecked = priceChanged ? now : (patch.lastChecked ?? prev.lastChecked);
 
   const historyEntry = Object.keys(changes).length > 0 ? [{ at: now, action: 'updated', changes }] : [];
@@ -573,8 +575,16 @@ export function markServicesChecked(ids) {
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
+function migrateSupplier(s) {
+  return {
+    searchTemplate: s.searchTemplate ?? '',
+    lastPriceCheck: s.lastPriceCheck ?? null,
+    ...s,
+  };
+}
+
 export function listSuppliers() {
-  return readJson(SUPPLIERS_FILE, DEFAULT_SUPPLIERS);
+  return readJson(SUPPLIERS_FILE, DEFAULT_SUPPLIERS).map(migrateSupplier);
 }
 
 export function createSupplier(data) {
@@ -584,6 +594,8 @@ export function createSupplier(data) {
     id: `sup_${randomUUID().slice(0, 8)}`,
     name: data.name || '',
     url: data.url || '',
+    searchTemplate: data.searchTemplate || '',
+    lastPriceCheck: data.lastPriceCheck || null,
     phone: data.phone || '',
     rating: data.rating ?? 3,
     note: data.note || '',
@@ -618,7 +630,7 @@ export function servicesToCsv(ids) {
   const items = readJson(SERVICES_FILE, DEFAULT_SERVICES)
     .map(migrateService)
     .filter(s => !ids || ids.includes(s.id));
-  const cols = ['id', 'name', 'category', 'deviceType', 'partType', 'brand', 'price', 'priceFrom', 'priceTo', 'laborCost', 'partCost', 'duration', 'hasExpress', 'popularity', 'available', 'archived'];
+  const cols = ['id', 'name', 'category', 'deviceType', 'partType', 'brand', 'price', 'priceFrom', 'priceTo', 'purchasePrice', 'laborCost', 'partCost', 'duration', 'hasExpress', 'popularity', 'available', 'archived'];
   const header = cols.join(';');
   const rows = items.map(s => cols.map(c => {
     const v = s[c];

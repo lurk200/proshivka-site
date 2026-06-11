@@ -133,7 +133,7 @@ function registerRepairPriceApi(server) {
             }
 
             // Strip internal fields from public response
-            const publicItems = items.map(({ partCost, laborCost, lastChecked, history, ...pub }) => pub);
+            const publicItems = items.map(({ partCost, purchasePrice, laborCost, lastChecked, history, ...pub }) => pub);
             return sendJson(res, 200, { items: publicItems });
           } catch (e) {
             return sendJson(res, 500, { error: String(e.message) });

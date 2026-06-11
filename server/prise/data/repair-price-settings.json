@@ -7,22 +7,45 @@
     "port": 1500
   },
   "markup": {
-    "globalPercent": 100,
+    "globalPercent": 5,
     "byTier": {
-      "full-orig": 0,
-      "original": 0,
-      "oled-jcid": 0,
-      "soft-oled": 0,
-      "oled": 0,
-      "jcid": 0,
-      "copy-good": 0,
+      "full-orig": 28,
+      "original": 22,
+      "oled-jcid": 14,
+      "soft-oled": 12,
+      "oled": 10,
+      "jcid": 10,
+      "copy-good": 6,
       "copy": 0
     },
     "byCategory": {
-      "display": 30,
-      "battery": 100
+      "display": 0,
+      "battery": 0,
+      "port": 0
     },
-    "fixedRub": 0
+    "fixedRub": 0,
+    "minPartMarkupRub": 350
+  },
+  "categorySettings": {
+    "display":       { "name": "Дисплей",                "markupPercent": 100, "laborRate": 1500 },
+    "glass":         { "name": "Стекло дисплея",         "markupPercent": 150, "laborRate": 800  },
+    "battery":       { "name": "Аккумулятор",            "markupPercent": 200, "laborRate": 1000 },
+    "port":          { "name": "Разъём зарядки",         "markupPercent": 250, "laborRate": 1500 },
+    "back-glass":    { "name": "Задняя крышка (стекло)", "markupPercent": 150, "laborRate": 800  },
+    "housing":       { "name": "Корпус",                 "markupPercent": 120, "laborRate": 2500 },
+    "camera":        { "name": "Камера",                 "markupPercent": 150, "laborRate": 1500 },
+    "camera-glass":  { "name": "Стекло камеры",          "markupPercent": 200, "laborRate": 500  },
+    "speaker":       { "name": "Динамик (полифон)",      "markupPercent": 200, "laborRate": 1000 },
+    "ear-speaker":   { "name": "Слуховой динамик",       "markupPercent": 200, "laborRate": 1000 },
+    "microphone":    { "name": "Микрофон",               "markupPercent": 200, "laborRate": 1000 },
+    "face-id":       { "name": "Face ID",                "markupPercent": 150, "laborRate": 2500 },
+    "button":        { "name": "Кнопки",                 "markupPercent": 200, "laborRate": 1000 },
+    "flex":          { "name": "Шлейф",                  "markupPercent": 200, "laborRate": 1000 },
+    "vibration":     { "name": "Вибромотор",             "markupPercent": 200, "laborRate": 800  },
+    "keyboard":      { "name": "Клавиатура",             "markupPercent": 150, "laborRate": 1200 },
+    "water":         { "name": "После воды",             "markupPercent": 0,   "laborRate": 2000 },
+    "diagnostic":    { "name": "Диагностика",            "markupPercent": 0,   "laborRate": 500  },
+    "other":         { "name": "Другое",                 "markupPercent": 100, "laborRate": 1000 }
   },
   "repairTime": {
     "display": {
