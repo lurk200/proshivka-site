@@ -25,7 +25,7 @@ const TABS = [
 
 function TabBar({ active, onChange }) {
   return (
-    <div className="flex gap-1 p-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-8">
+    <div className="flex gap-1 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-medium)] mb-8">
       {TABS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
@@ -34,7 +34,7 @@ function TabBar({ active, onChange }) {
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ${
             active === id
               ? 'bg-[#84CC16] text-[#0a0b0e] shadow-sm'
-              : 'text-[#6b7280] hover:text-white'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Icon className="w-4 h-4 shrink-0" />
