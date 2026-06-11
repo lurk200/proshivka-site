@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Building2, QrCode, ArrowRight } from 'lucide-react';
 import { useCms } from '../../src/context/CmsContext';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../components/ui';
 import { useAdminPersist } from '../hooks/useAdminPersist';
@@ -19,6 +21,36 @@ export default function CompanyPage() {
   return (
     <>
       <PageHeader title="Компания" description="Контакты и основная информация, отображаемые на сайте." />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <Link
+          to="/admin/settings/company"
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.14] transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#84CC16]/10 border border-[#84CC16]/20 flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4 text-[#84CC16]" strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13.5px] font-medium text-white">Настройки компании</p>
+            <p className="text-[12px] text-[#6b7280]">Данные для документов и квитанций</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-[#4b5563] group-hover:text-[#9ca3af] transition-colors shrink-0" />
+        </Link>
+        <Link
+          to="/admin/settings/documents"
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.14] transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#84CC16]/10 border border-[#84CC16]/20 flex items-center justify-center shrink-0">
+            <QrCode className="w-4 h-4 text-[#84CC16]" strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13.5px] font-medium text-white">Настройки документов</p>
+            <p className="text-[12px] text-[#6b7280]">QR-код отзыва в квитанциях</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-[#4b5563] group-hover:text-[#9ca3af] transition-colors shrink-0" />
+        </Link>
+      </div>
+
       <AdminCard>
         <div className="space-y-5">
           <Field label="Название">

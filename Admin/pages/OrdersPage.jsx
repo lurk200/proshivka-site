@@ -598,6 +598,7 @@ const EMPTY_FORM = {
   appearances: [], appearanceCustom: '',
   kit: new Set(['Телефон']), kitComment: '',
   estimatedReadyAt: todayPlusDays(3),
+  estimatedCost: '',
   managerName: '', masterName: '',
   status: 'accepted',
 };
@@ -649,6 +650,7 @@ function CreateModal({ open, onCreate, onClose }) {
       estimatedReadyAt: form.estimatedReadyAt || undefined,
       managerName: form.managerName.trim() || undefined,
       masterName: form.masterName.trim() || undefined,
+      cost: form.estimatedCost !== '' ? Number(form.estimatedCost) : undefined,
       status: form.status,
       historyNote: 'Заказ создан',
     };
@@ -794,6 +796,21 @@ function CreateModal({ open, onCreate, onClose }) {
                   className={chipOff}>{label}</button>
               ))}
             </div>
+          </div>
+
+          {/* ── Ориентировочная стоимость ── */}
+          {section('Стоимость')}
+          <div>
+            <label className={labelCls}>Ориентировочная стоимость (₽)</label>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              className={inputCls}
+              value={form.estimatedCost}
+              onChange={e => set('estimatedCost', e.target.value)}
+              placeholder="Не указана"
+            />
           </div>
 
           {/* ── Менеджер / Мастер ── */}
