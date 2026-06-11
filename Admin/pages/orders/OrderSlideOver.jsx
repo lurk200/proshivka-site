@@ -432,12 +432,13 @@ export default function OrderSlideOver({ order, open, onClose, onSave, onDelete 
   const panelRef = useRef(null);
 
   useEffect(() => {
+    if (!open) return;
     const pwd = sessionStorage.getItem('proshivka-admin-api-key') || '';
     fetch('/api/admin/settings/company', { headers: { 'X-Admin-Password': pwd } })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setCompanySettings(data); })
       .catch(() => {});
-  }, []);
+  }, [open]);
 
   const [form, setForm] = useState({});
   const syncedForId = useRef(null);

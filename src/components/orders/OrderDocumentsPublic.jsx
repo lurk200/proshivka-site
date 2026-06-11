@@ -39,23 +39,24 @@ function DocActionCard({ icon: Icon, title, hint, onPrint }) {
 }
 
 /** Документы для клиента — в строку на планшете и ПК */
-export default function OrderDocumentsPublic({ documents, company }) {
+export default function OrderDocumentsPublic({ documents, company, reviewUrl }) {
   const warranty = documents?.warranty;
+  const reviewSettings = reviewUrl ? { reviewUrl } : undefined;
 
   const receiptData = useMemo(
     () =>
       documents?.receipt
-        ? buildOrderDocData(mergeOrderForDoc(documents.receipt, warranty), company)
+        ? buildOrderDocData(mergeOrderForDoc(documents.receipt, warranty), company, { settings: reviewSettings })
         : null,
-    [documents?.receipt, warranty, company],
+    [documents?.receipt, warranty, company, reviewUrl],
   );
 
   const actData = useMemo(
     () =>
       documents?.act
-        ? buildOrderDocData(mergeOrderForDoc(documents.act, warranty), company)
+        ? buildOrderDocData(mergeOrderForDoc(documents.act, warranty), company, { settings: reviewSettings })
         : null,
-    [documents?.act, warranty, company],
+    [documents?.act, warranty, company, reviewUrl],
   );
 
   const receiptPrint = useOrderPrint('Приемная квитанция');

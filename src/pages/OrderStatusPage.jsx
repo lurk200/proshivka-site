@@ -335,7 +335,7 @@ function OrderResult({ order, company, lastUpdated, onRefresh, refreshing }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 md:items-stretch">
         {order.timeline?.length ? <FullTimeline timeline={order.timeline} /> : null}
         {order.documents ? (
-          <OrderDocumentsPublic documents={order.documents} company={company} />
+          <OrderDocumentsPublic documents={order.documents} company={company} reviewUrl={order.reviewUrl} />
         ) : null}
       </div>
 

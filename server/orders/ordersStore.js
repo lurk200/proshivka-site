@@ -12,6 +12,7 @@ import {
   parseWarrantyDays,
 } from './orderDocuments.js';
 import { defaultPrintFields, mergePrintFields, pickPrintFields } from './orderPrintFields.js';
+import { readSettings } from '../settings/settingsStore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
@@ -213,7 +214,9 @@ export function toPublicOrder(order) {
 export function trackOrder(orderNumber) {
   const order = findOrderByNumber(orderNumber);
   if (!order) return null;
-  return toPublicOrder(order);
+  const publicOrder = toPublicOrder(order);
+  const companySettings = readSettings('company');
+  return { ...publicOrder, reviewUrl: companySettings.reviewUrl || '' };
 }
 
 // ─── Create ──────────────────────────────────────────────────────────────────

@@ -81,7 +81,7 @@ export function buildOrderDocData(order, company, opts = {}) {
   const companyTagline = settings.tagline || company.brandTagline || company.descriptor || 'Ремонт смартфонов и электроники';
   const companyPhone = settings.phone || company.phone || '';
   const companyAddress = settings.address || company.address || '';
-  const reviewUrl = settings.reviewUrl || company.contacts?.[0]?.url || origin;
+  const reviewUrl = settings.reviewUrl || origin;
 
   return {
     orderNumber: order.orderNumber,
