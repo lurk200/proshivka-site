@@ -11,8 +11,8 @@ export const PROSHIVKA_MAP = {
  * С параметром oid показывает баннер/карточку организации как на Яндекс Картах.
  */
 export function buildYandexWidgetUrl({ lon, lat, zoom, oid } = PROSHIVKA_MAP) {
-  const base = `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=${zoom ?? 16}&mode=search`;
-  if (oid) return `${base}&oid=${oid}`;
+  const base = `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=${zoom ?? 16}`;
+  if (oid) return `${base}&ol=biz&oid=${oid}`;
   return `${base}&pt=${lon},${lat},pm2rdm`;
 }
 
@@ -24,18 +24,20 @@ export function isEmbeddableYandexMapUrl(url = '') {
 
 /**
  * Разрешает конфиг карты из CMS-данных.
- * Если в сохранённом embedUrl нет oid организации — используется DEFAULT_YANDEX_WIDGET_URL,
- * который показывает баннер организации через mode=search&oid=.
+ * Если в сохранённом embedUrl нет ol=biz&oid= — используется DEFAULT_YANDEX_WIDGET_URL,
+ * который показывает баннер/карточку организации.
  */
 export function resolveYandexMapConfig(yandexMap = {}) {
   const orgUrl = yandexMap.orgUrl || PROSHIVKA_MAP.orgUrl;
   const routeUrl = yandexMap.openUrl || orgUrl;
 
   const stored = String(yandexMap.embedUrl || '');
-  const storedHasOid =
-    isEmbeddableYandexMapUrl(stored) && stored.includes(PROSHIVKA_MAP.oid);
+  const storedIsValid =
+    isEmbeddableYandexMapUrl(stored) &&
+    stored.includes(PROSHIVKA_MAP.oid) &&
+    stored.includes('ol=biz');
 
-  const embedUrl = storedHasOid ? stored : DEFAULT_YANDEX_WIDGET_URL;
+  const embedUrl = storedIsValid ? stored : DEFAULT_YANDEX_WIDGET_URL;
 
   return {
     embedUrl,
