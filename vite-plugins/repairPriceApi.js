@@ -114,9 +114,12 @@ function registerRepairPriceApi(server) {
             const search = url.searchParams.get('search') || undefined;
             const sort = url.searchParams.get('sort') || 'popularity';
 
-            // Track search query for analytics (fire-and-forget)
+            // Track search query for analytics with session linkage
             if (search) {
-              try { logSearch(search); } catch {}
+              try {
+                const sid = url.searchParams.get('sessionId') || null;
+                logSearch(search, sid);
+              } catch {}
             }
 
             let items = listServices({ category, deviceType, partType, brand, search, archived: false, available: true });

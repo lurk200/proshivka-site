@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Phone, Star, ExternalLink } from 'lucide-react';
 import { useCms } from '../../context/CmsContext';
+import { trackCta } from '../../hooks/useAnalytics';
 
 const currentYear = new Date().getFullYear();
 
@@ -72,6 +73,7 @@ export default function Footer() {
               <li>
                 <a
                   href={phoneHref}
+                  onClick={() => trackCta('phone', 'footer')}
                   className="inline-flex items-center gap-2 font-medium text-[var(--text-primary)] hover:text-[#84CC16] transition-colors"
                 >
                   <Phone className="w-4 h-4 text-[#84CC16]" strokeWidth={1.5} />
@@ -102,6 +104,7 @@ export default function Footer() {
                   href={mainHome.about.yandexMap.orgUrl ?? mainHome.about.yandexMap.openUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackCta('map_click', 'footer')}
                   className="inline-flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   Яндекс Карты
@@ -111,6 +114,7 @@ export default function Footer() {
             </ul>
             <a
               href={phoneHref}
+              onClick={() => trackCta('phone', 'footer_cta')}
               className="mt-5 inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-[#84CC16] px-5 py-2.5 text-[13px] font-medium text-[#0a0a0a] hover:bg-[#9ae022] transition-colors"
             >
               Позвонить

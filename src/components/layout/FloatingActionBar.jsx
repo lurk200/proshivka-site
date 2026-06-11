@@ -4,6 +4,7 @@ import { ChevronDown, MessageCircle, Phone, Wrench } from 'lucide-react';
 import { useCms } from '../../context/CmsContext';
 import { SocialIcon } from '../icons/SocialIcons';
 import { getAskMasterChannels, getTelHref } from '../../utils/contactActions';
+import { trackCta } from '../../hooks/useAnalytics';
 
 function AskMasterPanel({ channels, phone, phoneHref, onClose }) {
   return (
@@ -24,7 +25,7 @@ function AskMasterPanel({ channels, phone, phoneHref, onClose }) {
                 href={channel.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={onClose}
+                onClick={() => { trackCta(channel.type, 'floating_ask'); onClose(); }}
                 className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[#84CC16]"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]">
@@ -40,7 +41,7 @@ function AskMasterPanel({ channels, phone, phoneHref, onClose }) {
       {phoneHref ? (
         <a
           href={phoneHref}
-          onClick={onClose}
+          onClick={() => { trackCta('phone', 'floating_ask'); onClose(); }}
           className={`flex items-center gap-2.5 rounded-lg px-2 py-2.5 text-[13px] font-medium transition-colors hover:bg-[#84CC16]/10 hover:text-[#84CC16] ${
             channels.length > 0 ? 'mt-1 border-t border-[var(--border-subtle)] pt-2' : ''
           }`}
@@ -137,6 +138,7 @@ export default function FloatingActionBar() {
 
         <Link
           to="/otpravit-v-remont"
+          onClick={() => trackCta('send_repair_cta', 'floating')}
           className="group flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-semibold leading-tight tracking-[-0.01em] transition-all duration-300 active:scale-[0.97] bg-[#84CC16] text-[#0A0A0C] shadow-[0_4px_20px_rgba(132,204,22,0.35)] hover:bg-[#9BE02A] hover:shadow-[0_6px_24px_rgba(132,204,22,0.45)]"
         >
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0C]/10 transition-colors group-hover:bg-[#0A0A0C]/15">

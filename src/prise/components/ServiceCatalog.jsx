@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Clock, Search, SlidersHorizontal, Sparkles, TrendingUp, X, Zap } from 'lucide-react';
 import { fetchServices, fetchPopularSearches } from '../api/repairPriceApi';
+import { getSessionId, trackServiceCta } from '../../hooks/useAnalytics';
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,7 @@ function ServiceCard({ svc, phone }) {
         {phone ? (
           <a
             href={`tel:${phone.replace(/\D/g, '')}`}
+            onClick={() => trackServiceCta(svc.name)}
             className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-white transition-colors"
           >
             Записаться
@@ -163,6 +165,7 @@ function ServiceCard({ svc, phone }) {
         ) : (
           <a
             href="/send-repair"
+            onClick={() => trackServiceCta(svc.name)}
             className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-white transition-colors"
           >
             Записаться
@@ -229,6 +232,7 @@ export default function ServiceCatalog({ phone }) {
         partType: partType || undefined,
         search: debouncedSearch || undefined,
         sort,
+        sessionId: debouncedSearch ? getSessionId() : undefined,
       });
       setItems(data);
     } catch (e) {

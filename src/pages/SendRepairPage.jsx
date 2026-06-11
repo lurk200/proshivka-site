@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +24,7 @@ import { useCms } from '../context/CmsContext';
 import { getActiveSocialContacts } from '../utils/socialContacts';
 import { getAskMasterChannels, getTelHref, withWhatsappText } from '../utils/contactActions';
 import YandexMapBlock from '../components/ui/YandexMapBlock';
+import { trackCta } from '../hooks/useAnalytics';
 
 function InfoRow({ icon: Icon, label, children }) {
   return (
@@ -46,6 +48,7 @@ export default function SendRepairPage() {
   const { cmsData } = useCms();
   const { company, sendRepair, mainHome } = cmsData;
   const about = mainHome.about;
+  const map = about.yandexMap;
   const socialContacts = getActiveSocialContacts(company.contacts);
   const phoneHref = getTelHref(company.phone);
   const channels = getAskMasterChannels(company.contacts);
@@ -116,6 +119,7 @@ export default function SendRepairPage() {
                     href={map.openUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackCta('map_route', 'send_repair_card')}
                     className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#84CC16] hover:underline"
                   >
                     Построить маршрут
@@ -249,6 +253,7 @@ export default function SendRepairPage() {
                       <InfoRow icon={Phone} label="Телефон">
                         <a
                           href={phoneHref}
+                          onClick={() => trackCta('phone', 'send_repair')}
                           className="text-[15px] font-medium text-[var(--text-primary)] hover:text-[#84CC16] transition-colors tabular-nums"
                         >
                           {company.phone}
@@ -269,6 +274,7 @@ export default function SendRepairPage() {
                         href={map.openUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackCta('map_route', 'send_repair')}
                         className="inline-flex items-center gap-2 rounded-xl bg-[#84CC16] px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0C] shadow-[0_0_16px_rgba(132,204,22,0.25)] hover:bg-[#9BE02A] transition-colors"
                       >
                         <Navigation className="h-4 w-4" />
@@ -280,6 +286,7 @@ export default function SendRepairPage() {
                         href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackCta('whatsapp', 'send_repair')}
                         className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-medium)] bg-[var(--bg-elevated)] px-4 py-2.5 text-[13px] font-medium text-[var(--text-primary)] hover:border-[#84CC16]/40 hover:text-[#84CC16] transition-colors"
                       >
                         <MessageCircle className="h-4 w-4" />
@@ -347,6 +354,7 @@ export default function SendRepairPage() {
                   href={ch.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackCta(ch.type, 'send_repair_cta')}
                   className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-medium)] bg-[var(--bg-surface)] px-5 py-3 text-[14px] font-medium text-[var(--text-primary)] hover:border-[#84CC16]/40 hover:text-[#84CC16] transition-colors"
                 >
                   {ch.label}

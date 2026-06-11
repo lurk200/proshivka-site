@@ -45,7 +45,7 @@ export async function fetchRepairPrice(modelIdOrQuery, signal, options = {}) {
 
 // ── Services catalog ─────────────────────────────────────────────────────────
 
-export async function fetchServices({ category, deviceType, partType, brand, search, sort } = {}) {
+export async function fetchServices({ category, deviceType, partType, brand, search, sort, sessionId } = {}) {
   const params = new URLSearchParams();
   if (category) params.set('category', category);
   if (deviceType) params.set('deviceType', deviceType);
@@ -53,6 +53,7 @@ export async function fetchServices({ category, deviceType, partType, brand, sea
   if (brand) params.set('brand', brand);
   if (search) params.set('search', search);
   if (sort) params.set('sort', sort);
+  if (sessionId) params.set('sessionId', sessionId);
   const qs = params.toString();
   const res = await fetch(`${SERVICES_BASE}${qs ? `?${qs}` : ''}`);
   const data = await parseResponse(res);
@@ -134,6 +135,21 @@ export async function fetchPopularSearches(limit = 10) {
 
 export async function fetchAdminSearchAnalytics() {
   const res = await fetch('/api/admin/search-analytics');
+  return parseResponse(res);
+}
+
+export async function fetchAdminAnalytics(headers = {}) {
+  const res = await fetch('/api/admin/analytics', { headers });
+  return parseResponse(res);
+}
+
+export async function fetchAdminAnalyticsSearchDemand(headers = {}, limit = 100) {
+  const res = await fetch(`/api/admin/analytics/search-demand?limit=${limit}`, { headers });
+  return parseResponse(res);
+}
+
+export async function cleanupAnalyticsEvents(headers = {}) {
+  const res = await fetch('/api/admin/analytics/cleanup', { method: 'POST', headers });
   return parseResponse(res);
 }
 

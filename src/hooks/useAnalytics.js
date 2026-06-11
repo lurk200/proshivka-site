@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SESSION_KEY = 'proshivka-sid';
+export const SESSION_KEY = 'proshivka-sid';
 
-function getSessionId() {
+export function getSessionId() {
+  if (typeof sessionStorage === 'undefined') return null;
   let sid = sessionStorage.getItem(SESSION_KEY);
   if (!sid) {
     sid = crypto.randomUUID();
@@ -20,13 +21,14 @@ function sendBeacon(url, payload) {
   try {
     const body = JSON.stringify(payload);
     if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'application/json' });
-      navigator.sendBeacon(url, blob);
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
     } else {
       fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
     }
   } catch {}
 }
+
+// ── Pageview tracker (used in SiteLayout) ─────────────────────────────────────
 
 export function useAnalytics() {
   const location = useLocation();
@@ -37,7 +39,6 @@ export function useAnalytics() {
     const path = location.pathname + location.search;
     if (path === prevPath.current) return;
     prevPath.current = path;
-
     sendBeacon('/api/analytics/pageview', {
       path,
       sessionId: getSessionId(),
@@ -46,6 +47,8 @@ export function useAnalytics() {
   }, [location]);
 }
 
+// ── CTA / click tracking ──────────────────────────────────────────────────────
+
 export function trackClick(target, label, path) {
   sendBeacon('/api/analytics/click', {
     target,
@@ -53,4 +56,14 @@ export function trackClick(target, label, path) {
     path: path || (typeof window !== 'undefined' ? window.location.pathname : '/'),
     sessionId: getSessionId(),
   });
+}
+
+// Convenience alias with explicit service name
+export function trackServiceCta(serviceName) {
+  trackClick('service_cta', serviceName || null);
+}
+
+// Track phone/messenger/map CTA presses
+export function trackCta(target, label) {
+  trackClick(target, label || null);
 }

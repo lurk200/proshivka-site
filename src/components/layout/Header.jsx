@@ -6,6 +6,7 @@ import { HeaderNavDesktop, HeaderNavMobile } from './HeaderNav';
 import BrandWordmark from './BrandWordmark';
 import { useCms } from '../../context/CmsContext';
 import { SocialIconButton } from '../ui/SocialLinks';
+import { trackCta } from '../../hooks/useAnalytics';
 
 const iconBtnClass =
   'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 text-[var(--text-primary)] transition-colors hover:border-[#84CC16]/30 hover:text-[#84CC16]';
@@ -63,6 +64,7 @@ export default function Header() {
           {/* Телефон: на телефоне только иконка */}
           <a
             href={phoneHref}
+            onClick={() => trackCta('phone', 'header_mobile')}
             className={`${iconBtnClass} md:hidden`}
             aria-label={`Позвонить: ${company.phone}`}
           >
@@ -77,6 +79,7 @@ export default function Header() {
             >
               <a
                 href={phoneHref}
+                onClick={() => trackCta('phone', 'header_desktop')}
                 className="inline-flex min-w-0 items-center gap-2 px-2.5 py-1.5 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#84CC16]"
                 aria-label={`Позвонить: ${company.phone}`}
               >
@@ -109,6 +112,7 @@ export default function Header() {
           ) : (
             <a
               href={phoneHref}
+              onClick={() => trackCta('phone', 'header_desktop')}
               className="hidden items-center gap-2 rounded-xl border border-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:border-[#84CC16]/30 hover:text-[#84CC16] md:inline-flex"
               aria-label={`Позвонить: ${company.phone}`}
             >
