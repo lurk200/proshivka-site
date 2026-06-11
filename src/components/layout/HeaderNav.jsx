@@ -214,9 +214,9 @@ export function HeaderNavMobile({ phone, phoneHref, contacts = [] }) {
             onClick={closeAll}
           />
           <nav
-            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto border-b border-[var(--border-subtle)] backdrop-blur-xl px-4 py-4 sm:top-[4.5rem] lg:hidden"
+            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto border-b border-[var(--border-subtle)] px-4 py-4 sm:top-[4.5rem] lg:hidden"
             aria-label="Мобильное меню"
-            style={{ background: 'var(--glass-bg)' }}
+            style={{ background: 'var(--bg-surface)' }}
           >
             <div className="mx-auto max-w-7xl space-y-1">
               {phoneHref ? (
@@ -281,7 +281,7 @@ export function HeaderNavMobile({ phone, phoneHref, contacts = [] }) {
                 );
               })}
 
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 px-3 py-2.5 sm:hidden">
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2.5 sm:hidden">
                 <span className="text-[13px] font-medium text-[var(--text-secondary)]">Тема оформления</span>
                 <ThemeToggle />
               </div>
