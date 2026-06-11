@@ -51,6 +51,8 @@ export default function RepairPricePage() {
   const mapUrl = cmsData.mainHome?.about?.yandexMap?.orgUrl ?? HOME_ABOUT.yandexMap.orgUrl;
   const search = useRepairPriceSearch();
   const [tab, setTab] = useState('catalog');
+  // Model selected in calculator — drives brand filter in catalog
+  const [selectedModel, setSelectedModel] = useState('');
 
   const handleSubmit = () => {
     const trimmed = search.query.trim();
@@ -61,6 +63,19 @@ export default function RepairPricePage() {
     );
     if (exact) { search.selectModel(exact); return; }
     search.loadPrice(trimmed);
+  };
+
+  // When user selects a model in the calculator, switch to catalog with model filter
+  const handleSelectModel = (item) => {
+    search.selectModel(item);
+    setSelectedModel(item.label);
+    setTab('catalog');
+  };
+
+  const handleClearModel = () => {
+    setSelectedModel('');
+    search.resetResult();
+    search.setQuery('');
   };
 
   const showCta =
@@ -97,7 +112,12 @@ export default function RepairPricePage() {
             {/* ── Catalog tab ─────────────────────────────────────────────── */}
             {tab === 'catalog' && (
               <Reveal delay={80}>
-                <ServiceCatalog phone={company?.phone} />
+                <ServiceCatalog
+                  phone={company?.phone}
+                  contacts={company?.contacts}
+                  selectedModel={selectedModel || undefined}
+                  onClearModel={handleClearModel}
+                />
                 <div className="mt-10">
                   <DesktopCta
                     phone={company.phone}
@@ -122,7 +142,7 @@ export default function RepairPricePage() {
                   suggestionsError={search.suggestionsError}
                   dropdownOpen={search.dropdownOpen}
                   onDropdownOpen={search.setDropdownOpen}
-                  onSelect={search.selectModel}
+                  onSelect={handleSelectModel}
                   onSubmit={handleSubmit}
                 />
 

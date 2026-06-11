@@ -4,6 +4,7 @@ import {
   getRepairPriceSettings,
   saveRepairSettings,
 } from '../server/prise/repairQuoteService.js';
+import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
 import {
   listServices,
   getService,
@@ -129,11 +130,29 @@ function registerRepairPriceApi(server) {
             } else if (sort === 'price_desc') {
               items.sort((a, b) => (b.priceTo ?? b.price ?? 0) - (a.priceTo ?? a.price ?? 0));
             } else {
-              items.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+              // Primary: popularity. Secondary: has purchase price. Tertiary: has supplier.
+              items.sort((a, b) => {
+                const popDiff = (b.popularity ?? 0) - (a.popularity ?? 0);
+                if (popDiff !== 0) return popDiff;
+                const ppDiff = (b.purchasePrice != null ? 1 : 0) - (a.purchasePrice != null ? 1 : 0);
+                if (ppDiff !== 0) return ppDiff;
+                return (b.supplierId ? 1 : 0) - (a.supplierId ? 1 : 0);
+              });
             }
 
-            // Strip internal fields from public response
-            const publicItems = items.map(({ partCost, purchasePrice, laborCost, lastChecked, history, ...pub }) => pub);
+            // Enrich with computed price + availability, strip internal fields
+            const catSettings = getRepairPriceSettings().categorySettings ?? {};
+            const publicItems = items.map((item) => {
+              const { partCost, purchasePrice, laborCost, lastChecked, history, ...pub } = item;
+              const clientPrice = purchasePrice != null && purchasePrice > 0
+                ? computeSimplePrice(purchasePrice, pub.partType, catSettings)
+                : null;
+              const freshness = getFreshnessStatus(item);
+              const availability = purchasePrice != null && purchasePrice > 0
+                ? (freshness === 'fresh' ? 'in_stock' : 'order')
+                : 'enquire';
+              return { ...pub, clientPrice, availability };
+            });
             return sendJson(res, 200, { items: publicItems });
           } catch (e) {
             return sendJson(res, 500, { error: String(e.message) });

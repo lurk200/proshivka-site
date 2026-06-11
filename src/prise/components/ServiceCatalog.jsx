@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Clock, Search, SlidersHorizontal, Sparkles, TrendingUp, X, Zap } from 'lucide-react';
+import {
+  CheckCircle2, Clock, HelpCircle, Package, Search,
+  SlidersHorizontal, Sparkles, TrendingUp, X, Zap,
+} from 'lucide-react';
 import { fetchServices, fetchPopularSearches } from '../api/repairPriceApi';
 import { getSessionId, trackServiceCta } from '../../hooks/useAnalytics';
+import { withWhatsappText } from '../../utils/contactActions';
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -38,25 +42,81 @@ const SORT_OPTIONS = [
   { id: 'price_desc', label: 'Сначала дороже' },
 ];
 
+// Service groups for grouped view
+const PART_GROUPS = [
+  { key: 'screen',    label: 'Экран и стекло',    types: new Set(['display', 'glass']) },
+  { key: 'battery',   label: 'Аккумулятор',        types: new Set(['battery']) },
+  { key: 'charging',  label: 'Зарядка',            types: new Set(['port']) },
+  { key: 'housing',   label: 'Корпус',             types: new Set(['back-glass', 'housing', 'cover']) },
+  { key: 'camera',    label: 'Камера',             types: new Set(['camera', 'camera-glass']) },
+  { key: 'audio',     label: 'Аудио',              types: new Set(['speaker', 'ear-speaker', 'microphone']) },
+  { key: 'biometric', label: 'Биометрия',          types: new Set(['face-id']) },
+  { key: 'controls',  label: 'Шлейфы и кнопки',   types: new Set(['button', 'flex', 'vibration']) },
+  { key: 'other',     label: 'Прочее',             types: new Set(['keyboard', 'water', 'diagnostic', 'other']) },
+];
+
 const DEFAULT_POPULAR_CHIPS = [
   'Замена дисплея', 'Аккумулятор', 'Разъём зарядки',
   'Камера', 'Диагностика', 'Корпус', 'Чистка',
 ];
 
+// Detect brand from model label string
+function brandFromModel(label) {
+  if (!label) return '';
+  const l = label.toLowerCase();
+  if (/iphone|ipad|macbook|ipod|apple/.test(l)) return 'Apple';
+  if (/samsung|galaxy/.test(l)) return 'Samsung';
+  if (/xiaomi|redmi|poco/.test(l)) return 'Xiaomi';
+  if (/huawei/.test(l)) return 'Huawei';
+  if (/honor/.test(l)) return 'Honor';
+  if (/oppo/.test(l)) return 'OPPO';
+  if (/realme/.test(l)) return 'Realme';
+  if (/vivo/.test(l)) return 'Vivo';
+  if (/oneplus/.test(l)) return 'OnePlus';
+  if (/nokia/.test(l)) return 'Nokia';
+  if (/motorola|moto /.test(l)) return 'Motorola';
+  return '';
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatPrice(svc) {
-  if (svc.price != null) return `${svc.price.toLocaleString('ru')} ₽`;
+  // clientPrice from computeSimplePrice (purchase price → markup → labor)
+  if (svc.clientPrice != null) return `${Number(svc.clientPrice).toLocaleString('ru')} ₽`;
+  if (svc.price != null) return `${Number(svc.price).toLocaleString('ru')} ₽`;
   if (svc.priceFrom != null && svc.priceTo != null)
-    return `${svc.priceFrom.toLocaleString('ru')} – ${svc.priceTo.toLocaleString('ru')} ₽`;
-  if (svc.priceFrom != null) return `от ${svc.priceFrom.toLocaleString('ru')} ₽`;
-  if (svc.priceTo != null) return `до ${svc.priceTo.toLocaleString('ru')} ₽`;
+    return `${Number(svc.priceFrom).toLocaleString('ru')} – ${Number(svc.priceTo).toLocaleString('ru')} ₽`;
+  if (svc.priceFrom != null) return `от ${Number(svc.priceFrom).toLocaleString('ru')} ₽`;
+  if (svc.priceTo != null) return `до ${Number(svc.priceTo).toLocaleString('ru')} ₽`;
   return 'Цена по запросу';
 }
 
 function devLabel(id) { return DEVICE_TYPES.find(d => d.id === id)?.label ?? id; }
-function catLabel(id) { return CATEGORIES.find(c => c.id === id)?.label ?? id; }
 function partLabel(id) { return PART_TYPES.find(p => p.id === id)?.label ?? id; }
+
+// ── Availability badge ────────────────────────────────────────────────────────
+
+function AvailabilityBadge({ status }) {
+  if (status === 'in_stock') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <CheckCircle2 className="w-2.5 h-2.5" />В наличии
+      </span>
+    );
+  }
+  if (status === 'order') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <Package className="w-2.5 h-2.5" />Под заказ
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
+      <HelpCircle className="w-2.5 h-2.5" />Уточняйте наличие
+    </span>
+  );
+}
 
 // ── Chip group ────────────────────────────────────────────────────────────────
 
@@ -109,7 +169,25 @@ function PopularChips({ chips, onSelect }) {
 
 // ── Service card ──────────────────────────────────────────────────────────────
 
-function ServiceCard({ svc, phone }) {
+function ServiceCard({ svc, phone, contacts, selectedModel }) {
+  const price = formatPrice(svc);
+  const isPriceComputed = svc.clientPrice != null;
+
+  // Build CTA href: WhatsApp with pre-fill if model known, else phone/contact
+  const whatsappContact = contacts?.find(c => c.type === 'whatsapp');
+  let ctaHref;
+  let ctaLabel = 'Записаться';
+
+  if (selectedModel && whatsappContact?.url) {
+    const msg = `Здравствуйте! Хочу записаться на «${svc.name}»${selectedModel ? ` для ${selectedModel}` : ''}. Ориентировочная цена: ${price}.`;
+    ctaHref = withWhatsappText(whatsappContact.url, msg);
+    ctaLabel = 'Записаться';
+  } else if (phone) {
+    ctaHref = `tel:${phone.replace(/[^\d+]/g, '')}`;
+  } else {
+    ctaHref = '/otpravit-v-remont';
+  }
+
   return (
     <div className="group relative flex flex-col rounded-2xl border border-[var(--border-medium)] bg-[var(--bg-surface)] hover:border-[var(--border-accent-hover)] hover:bg-[var(--bg-elevated)] transition-all duration-200 overflow-hidden">
       <div className="h-[2px] bg-gradient-to-r from-[#84CC16]/40 via-[#84CC16] to-[#84CC16]/40 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -120,14 +198,17 @@ function ServiceCard({ svc, phone }) {
           <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
             {devLabel(svc.deviceType)}
           </span>
-          <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
-            {partLabel(svc.partType)}
-          </span>
+          {svc.brand && (
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
+              {svc.brand}
+            </span>
+          )}
           {svc.hasExpress && (
             <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
               <Zap className="w-2.5 h-2.5" />Экспресс
             </span>
           )}
+          <AvailabilityBadge status={svc.availability} />
         </div>
 
         {/* Title */}
@@ -140,9 +221,13 @@ function ServiceCard({ svc, phone }) {
 
         <div className="mt-auto pt-2 flex items-end justify-between gap-3">
           <div>
-            <p className="text-[19px] font-bold text-[#84CC16] leading-none">{formatPrice(svc)}</p>
-            {svc.price === 500 && svc.category === 'diagnostic' && (
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">бесплатно при ремонте</p>
+            <p className={`text-[19px] font-bold leading-none ${isPriceComputed ? 'text-[#84CC16]' : 'text-[var(--text-primary)]'}`}>
+              {price}
+            </p>
+            {isPriceComputed && (svc.priceFrom != null || svc.priceTo != null) && (
+              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                диапазон {svc.priceFrom != null ? `от ${svc.priceFrom.toLocaleString('ru')}` : ''}{svc.priceTo != null ? ` до ${svc.priceTo.toLocaleString('ru')}` : ''} ₽
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1 text-[12px] text-[var(--text-muted)] shrink-0">
@@ -153,23 +238,15 @@ function ServiceCard({ svc, phone }) {
 
       {/* CTA */}
       <div className="border-t border-[var(--border-subtle)] px-4 py-3">
-        {phone ? (
-          <a
-            href={`tel:${phone.replace(/[^\d+]/g, '')}`}
-            onClick={() => trackServiceCta(svc.name)}
-            className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Записаться
-          </a>
-        ) : (
-          <a
-            href="/send-repair"
-            onClick={() => trackServiceCta(svc.name)}
-            className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Записаться
-          </a>
-        )}
+        <a
+          href={ctaHref}
+          target={ctaHref.startsWith('https://') ? '_blank' : undefined}
+          rel={ctaHref.startsWith('https://') ? 'noopener noreferrer' : undefined}
+          onClick={() => trackServiceCta(svc.name)}
+          className="flex items-center justify-center gap-2 w-full text-[13px] font-semibold text-[#84CC16] hover:text-[var(--text-primary)] transition-colors"
+        >
+          {ctaLabel}
+        </a>
       </div>
     </div>
   );
@@ -190,9 +267,28 @@ function CardSkeleton() {
   );
 }
 
+// ── Group section header ──────────────────────────────────────────────────────
+
+function GroupSection({ label, items, phone, contacts, selectedModel }) {
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="text-[13px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">{label}</h2>
+        <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+        <span className="text-[11px] text-[var(--text-muted)]">{items.length}</span>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map(svc => (
+          <ServiceCard key={svc.id} svc={svc} phone={phone} contacts={contacts} selectedModel={selectedModel} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ServiceCatalog({ phone }) {
+export default function ServiceCatalog({ phone, contacts, selectedModel, onClearModel }) {
   const [category, setCategory] = useState('');
   const [deviceType, setDeviceType] = useState('');
   const [partType, setPartType] = useState('');
@@ -206,6 +302,9 @@ export default function ServiceCatalog({ phone }) {
   const [error, setError] = useState(null);
 
   const [popularChips, setPopularChips] = useState(DEFAULT_POPULAR_CHIPS);
+
+  // Brand filter derived from selected model
+  const modelBrand = useMemo(() => brandFromModel(selectedModel), [selectedModel]);
 
   useEffect(() => {
     fetchPopularSearches(10).then(data => {
@@ -228,6 +327,7 @@ export default function ServiceCatalog({ phone }) {
         category: category || undefined,
         deviceType: deviceType || undefined,
         partType: partType || undefined,
+        brand: modelBrand || undefined,
         search: debouncedSearch || undefined,
         sort,
         sessionId: debouncedSearch ? getSessionId() : undefined,
@@ -238,7 +338,7 @@ export default function ServiceCatalog({ phone }) {
     } finally {
       setLoading(false);
     }
-  }, [category, deviceType, partType, debouncedSearch, sort]);
+  }, [category, deviceType, partType, modelBrand, debouncedSearch, sort]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -262,10 +362,37 @@ export default function ServiceCatalog({ phone }) {
     handleSearch('');
   };
 
+  // Grouped view: only when no search and no partType filter
+  const grouped = useMemo(() => {
+    if (debouncedSearch || partType) return null;
+    const groups = PART_GROUPS
+      .map(g => ({ ...g, groupItems: items.filter(s => g.types.has(s.partType)) }))
+      .filter(g => g.groupItems.length > 0);
+    // Only use grouped if we have 2+ distinct groups (otherwise flat makes more sense)
+    return groups.length >= 2 ? groups : null;
+  }, [items, debouncedSearch, partType]);
+
   return (
     <div>
+      {/* Model filter badge */}
+      {selectedModel && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-2.5 rounded-2xl bg-[#84CC16]/[0.08] border border-[#84CC16]/20">
+          <span className="text-[12px] text-[#84CC16] font-medium flex-1 truncate">
+            Услуги для: <span className="font-bold">{selectedModel}</span>
+            {modelBrand && <span className="text-[#84CC16]/60 ml-1">({modelBrand})</span>}
+          </span>
+          <button
+            type="button"
+            onClick={onClearModel}
+            className="flex items-center gap-1 text-[12px] text-[#84CC16]/70 hover:text-[#84CC16] transition-colors shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />Сброс
+          </button>
+        </div>
+      )}
+
       {/* Popular chips */}
-      {!debouncedSearch && !activeFiltersCount && (
+      {!debouncedSearch && !activeFiltersCount && !selectedModel && (
         <PopularChips chips={popularChips} onSelect={handleChipClick} />
       )}
 
@@ -374,7 +501,7 @@ export default function ServiceCatalog({ phone }) {
         </div>
       )}
 
-      {/* Results grid */}
+      {/* Results */}
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
@@ -388,17 +515,36 @@ export default function ServiceCatalog({ phone }) {
         <div className="py-12 text-center">
           <Sparkles className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-3" />
           <p className="text-[14px] text-[var(--text-secondary)]">
-            {debouncedSearch ? `По запросу «${debouncedSearch}» ничего не найдено` : 'Услуги не найдены'}
+            {selectedModel
+              ? `Для «${selectedModel}» услуги не найдены${debouncedSearch ? ` по запросу «${debouncedSearch}»` : ''}`
+              : debouncedSearch ? `По запросу «${debouncedSearch}» ничего не найдено` : 'Услуги не найдены'}
           </p>
-          {(debouncedSearch || activeFiltersCount > 0) && (
-            <button type="button" onClick={resetAll} className="mt-2 text-[13px] text-[#84CC16] hover:underline">
+          {(debouncedSearch || activeFiltersCount > 0 || selectedModel) && (
+            <button type="button" onClick={() => { resetAll(); if (selectedModel) onClearModel?.(); }} className="mt-2 text-[13px] text-[#84CC16] hover:underline">
               Сбросить
             </button>
           )}
         </div>
+      ) : grouped ? (
+        /* Grouped view: section headers by part type */
+        <div>
+          {grouped.map(g => (
+            <GroupSection
+              key={g.key}
+              label={g.label}
+              items={g.groupItems}
+              phone={phone}
+              contacts={contacts}
+              selectedModel={selectedModel}
+            />
+          ))}
+        </div>
       ) : (
+        /* Flat grid view */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map(svc => <ServiceCard key={svc.id} svc={svc} phone={phone} />)}
+          {items.map(svc => (
+            <ServiceCard key={svc.id} svc={svc} phone={phone} contacts={contacts} selectedModel={selectedModel} />
+          ))}
         </div>
       )}
     </div>
