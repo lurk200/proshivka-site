@@ -1,4 +1,4 @@
-/** @typedef {'display' | 'battery' | 'port'} RepairKind */
+/** @typedef {'display' | 'battery' | 'port' | 'camera' | 'camera-glass' | 'back-glass' | 'housing' | 'ear-speaker' | 'speaker' | 'microphone' | 'face-id' | 'button' | 'vibration'} RepairKind */
 
 /**
  * @typedef {Object} ParsedRepairQuery
@@ -37,6 +37,56 @@ const INTENT_RULES = [
       /^матриц[аы]\s+на\s+/i,
     ],
   },
+  {
+    kind: 'camera-glass',
+    label: 'Замена стекла камеры',
+    strip: [
+      /^(?:замена\s+)?(?:стекло|линза)\s+камер[ыа]?\s+(?:на|для)\s+/i,
+    ],
+  },
+  {
+    kind: 'camera',
+    label: 'Замена камеры',
+    strip: [
+      /^(?:замена\s+)?(?:камер[аы]?|объектив[а]?)\s+(?:на|для)\s+/i,
+      /^камер[аы]?\s+на\s+/i,
+    ],
+  },
+  {
+    kind: 'back-glass',
+    label: 'Замена задней крышки',
+    strip: [
+      /^(?:замена\s+)?(?:задн(?:ей|яя)\s+крышк[иа]?|задн(?:ее|ее)\s+стекл[оа]?)\s+(?:на|для)\s+/i,
+    ],
+  },
+  {
+    kind: 'housing',
+    label: 'Замена корпуса',
+    strip: [
+      /^(?:замена\s+)?(?:корпус[а]?|рамк[аи])\s+(?:на|для)\s+/i,
+    ],
+  },
+  {
+    kind: 'face-id',
+    label: 'Восстановление Face ID',
+    strip: [
+      /^(?:замена\s+|восстановление\s+)?face[\s._-]*id\s+(?:на|для)\s+/i,
+    ],
+  },
+  {
+    kind: 'speaker',
+    label: 'Замена динамика',
+    strip: [
+      /^(?:замена\s+)?(?:динамик[а]?|полифон[а]?)\s+(?:на|для)\s+/i,
+    ],
+  },
+  {
+    kind: 'button',
+    label: 'Замена кнопок',
+    strip: [
+      /^(?:замена\s+)?(?:кнопк[аи]?|кнопки?\s+(?:питания|громкости|home))\s+(?:на|для)\s+/i,
+    ],
+  },
 ];
 
 /** @param {string} phrase */
@@ -44,7 +94,17 @@ function inferKindFromServicePhrase(phrase) {
   const p = String(phrase || '').toLowerCase().trim();
   if (!p) return null;
   if (/аккумулятор|акб|батаре/i.test(p)) return 'battery';
-  if (/разъ|разьем|коннектор|заряд|шлейф|type-?c|lightning|usb/i.test(p)) return 'port';
+  if (/разъ|разьем|коннектор|заряд|шлейф.*заряд|type-?c|lightning|usb/i.test(p)) return 'port';
+  if (/стекло\s*камер|линза\s*камер/i.test(p)) return 'camera-glass';
+  if (/face[\s._-]*id/i.test(p)) return 'face-id';
+  if (/задн.*крышк|задн.*стекл/i.test(p)) return 'back-glass';
+  if (/корпус|рамк/i.test(p)) return 'housing';
+  if (/камер|объектив/i.test(p)) return 'camera';
+  if (/слухов.*динамик|разговорн|earpiece/i.test(p)) return 'ear-speaker';
+  if (/микрофон/i.test(p)) return 'microphone';
+  if (/динамик|полифон/i.test(p)) return 'speaker';
+  if (/вибро/i.test(p)) return 'vibration';
+  if (/кнопк/i.test(p)) return 'button';
   if (/диспле|экран|стекл|матриц|модул/i.test(p)) return 'display';
   return null;
 }

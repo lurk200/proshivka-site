@@ -1,7 +1,4 @@
-import {
-  computeRepairPricing,
-  getRepairTimeForPart,
-} from '../../src/data/repairPriceSettings.js';
+import { computeSimplePrice } from '../../src/data/repairCategorySettings.js';
 import {
   normalizeSearchQuery,
   parseRepairQuery,
@@ -25,8 +22,41 @@ const FETCH_OPTIONS = {
   },
 };
 
-const DISPLAY_EXCLUDE =
-  /скотч|подсветк|поляриз|инструмент|клей|плёнк|пленк|стекло\s|защитн/i;
+// All part categories the calculator searches for
+const ALL_PART_KINDS = [
+  'display', 'battery', 'port',
+  'camera', 'camera-glass', 'back-glass', 'housing',
+  'ear-speaker', 'speaker', 'microphone',
+  'face-id', 'button', 'vibration',
+];
+
+// Default repair times per category (used when settings.repairTime doesn't cover the kind)
+const DEFAULT_REPAIR_TIMES = {
+  display:        { default: '1–2 часа',   premium: '2–3 часа',  threshold: 10000 },
+  battery:        { default: '40–60 мин',  premium: '1–2 часа',  threshold: 8000  },
+  port:           { default: '1–2 часа',   premium: '2–3 часа',  threshold: 6000  },
+  camera:         { default: '1–2 часа',   premium: '2–3 часа',  threshold: 8000  },
+  'camera-glass': { default: '30–60 мин',  premium: '1–2 часа',  threshold: 3000  },
+  'back-glass':   { default: '1–2 часа',   premium: '1–2 часа',  threshold: 99999 },
+  housing:        { default: '2–3 часа',   premium: '3–4 часа',  threshold: 15000 },
+  'ear-speaker':  { default: '30–60 мин',  premium: '1–2 часа',  threshold: 3000  },
+  microphone:     { default: '30–60 мин',  premium: '1–2 часа',  threshold: 3000  },
+  speaker:        { default: '30–60 мин',  premium: '1–2 часа',  threshold: 3000  },
+  vibration:      { default: '30–60 мин',  premium: '1–2 часа',  threshold: 3000  },
+  button:         { default: '40–60 мин',  premium: '1–2 часа',  threshold: 5000  },
+  'face-id':      { default: '2–3 часа',   premium: '3–4 часа',  threshold: 10000 },
+};
+
+function getRepairTimeForKind(kind, clientPrice, settings) {
+  // Use per-category override from settings.repairTime when available
+  const fromSettings = settings.repairTime?.[kind];
+  if (fromSettings) {
+    const threshold = fromSettings.premiumThreshold ?? 10000;
+    return clientPrice >= threshold ? fromSettings.premium : fromSettings.default;
+  }
+  const block = DEFAULT_REPAIR_TIMES[kind] ?? DEFAULT_REPAIR_TIMES.display;
+  return clientPrice >= block.threshold ? block.premium : block.default;
+}
 
 /** Устаревшие модели — скрываем при общем запросе без номера поколения */
 const LEGACY_MODEL_PATTERN =
@@ -293,20 +323,16 @@ function buildCategoryOptions(products, kind, settings, modelLabel) {
     }
   }
 
+  const catSettings = settings.categorySettings ?? {};
+
   const options = [...tierMap.values()]
     .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier))
     .slice(0, settings.maxOptionsPerCategory)
     .map((row) => {
-      const priced = computeRepairPricing({
-        partPrice: row.partPrice,
-        tier: row.tier,
-        kind,
-        modelLabel,
-        settings,
-      });
-      const partWithMarkup = priced.partWithMarkup;
-      const labor = priced.labor;
-      const totalPrice = priced.total;
+      // Apply admin-configured markup (markupPercent + laborRate per category)
+      const totalPrice =
+        computeSimplePrice(row.partPrice, kind, catSettings) ??
+        Math.round((row.partPrice * 2) / 100) * 100;
       return {
         id: `${kind}-${row.tier}`,
         partType: getQualityLabel(row.tier),
@@ -314,7 +340,7 @@ function buildCategoryOptions(products, kind, settings, modelLabel) {
         variant: row.variant || getQualityLabel(row.tier),
         totalPrice,
         inStock: true,
-        repairTime: getRepairTimeForPart(partWithMarkup, kind, settings),
+        repairTime: getRepairTimeForKind(kind, totalPrice, settings),
       };
     });
 
@@ -331,7 +357,7 @@ function buildCategoryOptions(products, kind, settings, modelLabel) {
  * @param {{ title: string, partPrice: number, inStockStavropol: boolean, section: string }[]} products
  */
 function buildRepairCategories(products, settings, repairKind = null, modelLabel = '') {
-  const kinds = repairKind ? [repairKind] : ['display', 'battery', 'port'];
+  const kinds = repairKind ? [repairKind] : ALL_PART_KINDS;
   const categories = [];
   for (const kind of kinds) {
     const block = buildCategoryOptions(products, kind, settings, modelLabel);
