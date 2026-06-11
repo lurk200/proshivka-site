@@ -42,14 +42,14 @@ export default function MainAboutPage() {
             <p className="text-[13px] font-medium text-white">Яндекс.Карты</p>
             <Field
               label="Embed URL (iframe)"
-              hint="Только map-widget/v1. Ссылки /maps/org/ в iframe не работают (X-Frame-Options)."
+              hint="Формат: https://yandex.ru/map-widget/v1/?ll=41.916583,45.019395&z=16&oid=120325503052&mode=search — параметр oid показывает баннер организации. Ссылки /maps/org/ в iframe заблокированы."
             >
               <Input
                 value={about.yandexMap.embedUrl}
                 onChange={(e) =>
                   setAbout({ yandexMap: { ...about.yandexMap, embedUrl: e.target.value } })
                 }
-                placeholder="https://yandex.ru/map-widget/v1/?ll=41.916583,45.019395&z=18&pt=..."
+                placeholder="https://yandex.ru/map-widget/v1/?ll=41.916583,45.019395&z=16&oid=120325503052&mode=search"
               />
             </Field>
             <Field label="Кнопка «Построить маршрут»">

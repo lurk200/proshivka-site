@@ -1,12 +1,19 @@
 export const PROSHIVKA_MAP = {
   lat: 45.019395,
   lon: 41.916583,
-  zoom: 18,
+  zoom: 16,
+  oid: '120325503052',
   orgUrl: 'https://yandex.ru/maps/org/proshivka/120325503052/',
 };
 
-export function buildYandexWidgetUrl({ lon, lat, zoom } = PROSHIVKA_MAP) {
-  return `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=${zoom}&pt=${lon},${lat},pm2rdm`;
+/**
+ * Строит URL embed-виджета Яндекс Карт.
+ * С параметром oid показывает баннер/карточку организации как на Яндекс Картах.
+ */
+export function buildYandexWidgetUrl({ lon, lat, zoom, oid } = PROSHIVKA_MAP) {
+  const base = `https://yandex.ru/map-widget/v1/?ll=${lon},${lat}&z=${zoom ?? 16}&mode=search`;
+  if (oid) return `${base}&oid=${oid}`;
+  return `${base}&pt=${lon},${lat},pm2rdm`;
 }
 
 export const DEFAULT_YANDEX_WIDGET_URL = buildYandexWidgetUrl(PROSHIVKA_MAP);
@@ -15,18 +22,20 @@ export function isEmbeddableYandexMapUrl(url = '') {
   return /yandex\.(ru|com)\/map-widget\/v1\//i.test(String(url));
 }
 
-function hasProshivkaCoords(url = '') {
-  return String(url).includes(String(PROSHIVKA_MAP.lon)) && String(url).includes(String(PROSHIVKA_MAP.lat));
-}
-
-/** iframe принимает только map-widget; ссылки /maps/org/ и /maps/? в iframe запрещены (X-Frame-Options). */
+/**
+ * Разрешает конфиг карты из CMS-данных.
+ * Если в сохранённом embedUrl нет oid организации — используется DEFAULT_YANDEX_WIDGET_URL,
+ * который показывает баннер организации через mode=search&oid=.
+ */
 export function resolveYandexMapConfig(yandexMap = {}) {
   const orgUrl = yandexMap.orgUrl || PROSHIVKA_MAP.orgUrl;
   const routeUrl = yandexMap.openUrl || orgUrl;
-  const embedUrl =
-    isEmbeddableYandexMapUrl(yandexMap.embedUrl) && hasProshivkaCoords(yandexMap.embedUrl)
-      ? yandexMap.embedUrl
-      : DEFAULT_YANDEX_WIDGET_URL;
+
+  const stored = String(yandexMap.embedUrl || '');
+  const storedHasOid =
+    isEmbeddableYandexMapUrl(stored) && stored.includes(PROSHIVKA_MAP.oid);
+
+  const embedUrl = storedHasOid ? stored : DEFAULT_YANDEX_WIDGET_URL;
 
   return {
     embedUrl,
