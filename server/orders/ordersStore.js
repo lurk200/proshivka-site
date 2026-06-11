@@ -58,7 +58,7 @@ export function generateOrderNumber(existing = []) {
   const todayNums = existing
     .map((o) => normalizeOrderNumber(o.orderNumber))
     .filter((n) => n.startsWith(prefix))
-    .map((n) => Number.parseInt(n.slice(prefix.length), 10))
+    .map((n) => Number.parseInt(n.slice(prefix.length + 1), 10))
     .filter((n) => Number.isFinite(n));
 
   const next = (todayNums.length ? Math.max(...todayNums) : 0) + 1;
