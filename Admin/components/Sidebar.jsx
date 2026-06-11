@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Sparkles, Wrench, FolderOpen, Lightbulb,
   LogOut, ExternalLink, Megaphone, Terminal, Image, MapPin, Layers, Scale,
   FileText, Navigation, LayoutTemplate, Globe, Calculator, ClipboardList,
-  Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2,
+  Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2, QrCode,
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
@@ -47,6 +47,8 @@ const SITE_NAV = [
 
 const SETTINGS_NAV = [
   { to: '/admin/settings/notifications', label: 'Уведомления', icon: Bell },
+  { to: '/admin/settings/company', label: 'Компания', icon: Building2 },
+  { to: '/admin/settings/documents', label: 'Документы', icon: QrCode },
 ];
 
 const PREVIEW_LINKS = [

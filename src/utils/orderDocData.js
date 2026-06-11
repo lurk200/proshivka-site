@@ -65,7 +65,8 @@ function buildLineItems(order, warrantyDays) {
 /**
  * @param {object} order — поля заказа (публичные или из админки)
  * @param {object} company — cms company
- * @param {{ siteOrigin?: string }} [opts]
+ * @param {{ siteOrigin?: string, settings?: object }} [opts]
+ *   settings.reviewUrl — ссылка для QR отзывов из /admin/settings/company
  */
 export function buildOrderDocData(order, company, opts = {}) {
   const origin =
@@ -75,6 +76,13 @@ export function buildOrderDocData(order, company, opts = {}) {
   const lineItems = buildLineItems(order, warrantyDays);
   const total = lineItems.reduce((s, i) => s + (Number(i.sum) || 0), 0);
 
+  const settings = opts.settings || {};
+  const companyName = settings.name || company.name || 'ПРОШИВКА';
+  const companyTagline = settings.tagline || company.brandTagline || company.descriptor || 'Ремонт смартфонов и электроники';
+  const companyPhone = settings.phone || company.phone || '';
+  const companyAddress = settings.address || company.address || '';
+  const reviewUrl = settings.reviewUrl || company.contacts?.[0]?.url || origin;
+
   return {
     orderNumber: order.orderNumber,
     orderDate: formatDocDateShort(order.createdAt || order.issuedAt || order.updatedAt),
@@ -82,11 +90,11 @@ export function buildOrderDocData(order, company, opts = {}) {
     actDate: formatDocDateShort(order.issuedAt || order.completionAct?.issuedAt),
     actNumber: order.completionAct?.number || `АВР-${order.orderNumber}`,
     company: {
-      name: (company.name || 'ПРОШИВКА').trim(),
-      tagline: (company.brandTagline || company.descriptor || 'Ремонт смартфонов и электроники').trim(),
-      title: `${company.name} ${company.brandTagline || company.descriptor || ''}`.trim(),
-      phone: company.phone || '',
-      address: company.address || '',
+      name: companyName.trim(),
+      tagline: companyTagline.trim(),
+      title: `${companyName} ${companyTagline}`.trim(),
+      phone: companyPhone,
+      address: companyAddress,
     },
     clientLine: clientLine(order),
     clientName: order.clientName?.trim() || '',
@@ -111,6 +119,6 @@ export function buildOrderDocData(order, company, opts = {}) {
     warrantyDays,
     warrantyUntil: order.warranty?.until ? formatDocDateShort(order.warranty.until) : null,
     statusQrUrl: `${origin}/status-zakaza?number=${encodeURIComponent(order.orderNumber)}`,
-    reviewQrUrl: company.contacts?.[0]?.url || origin,
+    reviewQrUrl: reviewUrl,
   };
 }

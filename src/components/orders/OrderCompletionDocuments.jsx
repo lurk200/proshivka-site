@@ -15,11 +15,11 @@ function mergeOrderForDoc(source, warranty) {
   };
 }
 
-export function ReceptionReceiptCard({ receipt, company, warranty }) {
+export function ReceptionReceiptCard({ receipt, company, warranty, settings }) {
   const { ref, print } = useOrderPrint('Приемная квитанция');
   const data = useMemo(
-    () => buildOrderDocData(mergeOrderForDoc(receipt, warranty), company),
-    [receipt, warranty, company],
+    () => buildOrderDocData(mergeOrderForDoc(receipt, warranty), company, { settings }),
+    [receipt, warranty, company, settings],
   );
   if (!receipt) return null;
 
@@ -32,11 +32,11 @@ export function ReceptionReceiptCard({ receipt, company, warranty }) {
   );
 }
 
-export function CompletionActCard({ act, company, warranty }) {
+export function CompletionActCard({ act, company, warranty, settings }) {
   const { ref, print } = useOrderPrint('Акт выполненных работ');
   const data = useMemo(
-    () => buildOrderDocData(mergeOrderForDoc(act, warranty), company),
-    [act, warranty, company],
+    () => buildOrderDocData(mergeOrderForDoc(act, warranty), company, { settings }),
+    [act, warranty, company, settings],
   );
   if (!act) return null;
 
@@ -80,7 +80,7 @@ export default function OrderCompletionDocuments({ documents, company }) {
 }
 
 /** Превью в админке */
-export function OrderDocumentsAdminPreview({ company, order }) {
+export function OrderDocumentsAdminPreview({ company, order, settings }) {
   if (!order) return null;
   const warranty = order.warranty;
   const actSource = order.completionAct
@@ -98,12 +98,12 @@ export function OrderDocumentsAdminPreview({ company, order }) {
           <ClipboardList className="h-3.5 w-3.5" />
           Приём
         </p>
-        <ReceptionReceiptCard receipt={order} company={company} warranty={warranty} />
+        <ReceptionReceiptCard receipt={order} company={company} warranty={warranty} settings={settings} />
       </div>
       <div>
         <p className="mb-2 text-[11px] font-mono uppercase tracking-widest text-[#6b7280]">Выдача</p>
         {actSource ? (
-          <CompletionActCard act={actSource} company={company} warranty={warranty} />
+          <CompletionActCard act={actSource} company={company} warranty={warranty} settings={settings} />
         ) : (
           <p className="text-[12px] text-[#9ca3af]">Акт появится после статуса «Выдан».</p>
         )}

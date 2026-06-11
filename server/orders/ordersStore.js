@@ -248,6 +248,8 @@ export function createOrder(payload) {
     createdAt: now,
     updatedAt: now,
     clientName: String(payload.clientName || '').trim(),
+    serialNumber: String(payload.serialNumber || '').trim(),
+    masterName: String(payload.masterName || '').trim(),
     workPerformed: String(payload.workPerformed || '').trim(),
     readyAt: null,
     issuedAt: null,
@@ -418,6 +420,8 @@ export function updateOrder(id, patch) {
     internalNote:
       patch.internalNote !== undefined ? String(patch.internalNote).trim() : prev.internalNote,
     clientName,
+    serialNumber: patch.serialNumber !== undefined ? String(patch.serialNumber).trim() : (prev.serialNumber ?? ''),
+    masterName: patch.masterName !== undefined ? String(patch.masterName).trim() : (prev.masterName ?? ''),
     workPerformed: canHaveDocuments(nextStatus) ? workPerformed : leftCompleted ? '' : prev.workPerformed,
     readyAt: becameReady ? readyAt : nextStatus === 'ready' ? prev.readyAt ?? readyAt : prev.readyAt,
     issuedAt: becameCompleted ? issuedAt : canHaveDocuments(nextStatus) ? prev.issuedAt ?? issuedAt : null,

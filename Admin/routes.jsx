@@ -24,6 +24,8 @@ import RepairPricePage from './pages/RepairPricePage';
 import OrdersPage from './pages/OrdersPage';
 import SendRepairEditorPage from './pages/SendRepairEditorPage';
 import NotificationsSettingsPage from './pages/settings/NotificationsSettingsPage';
+import CompanySettingsPage from './pages/settings/CompanySettingsPage';
+import DocumentSettingsPage from './pages/settings/DocumentSettingsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 
 const softwareRepairEditors = [
@@ -67,6 +69,8 @@ export const adminRoutes = [
           { path: 'orders', element: <OrdersPage /> },
           { path: 'send-repair', element: <SendRepairEditorPage /> },
           { path: 'settings/notifications', element: <NotificationsSettingsPage /> },
+          { path: 'settings/company', element: <CompanySettingsPage /> },
+          { path: 'settings/documents', element: <DocumentSettingsPage /> },
           { path: 'analytics', element: <AnalyticsPage /> },
           { path: 'main/works', element: <Navigate to="/admin/works" replace /> },
           { path: 'main/seo', element: <Navigate to="/admin/seo" replace /> },

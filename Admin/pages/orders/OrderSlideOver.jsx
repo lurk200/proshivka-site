@@ -424,11 +424,20 @@ function FinanceTab({ form, set }) {
 
 export default function OrderSlideOver({ order, open, onClose, onSave, onDelete }) {
   const { cmsData } = useCms();
+  const [companySettings, setCompanySettings] = useState(null);
   const [tab, setTab] = useState('main');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const panelRef = useRef(null);
+
+  useEffect(() => {
+    const pwd = sessionStorage.getItem('proshivka-admin-api-key') || '';
+    fetch('/api/admin/settings/company', { headers: { 'X-Admin-Password': pwd } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setCompanySettings(data); })
+      .catch(() => {});
+  }, []);
 
   const [form, setForm] = useState({});
   const syncedForId = useRef(null);
@@ -465,6 +474,8 @@ export default function OrderSlideOver({ order, open, onClose, onSave, onDelete 
       prepayment: order.prepayment != null ? String(order.prepayment) : '',
       estimatedReadyAt: order.estimatedReadyAt ? order.estimatedReadyAt.slice(0, 10) : '',
       managerName: order.managerName ?? '',
+      masterName: order.masterName ?? '',
+      serialNumber: order.serialNumber ?? '',
       // Issuance
       workPerformed: order.workPerformed ?? '',
       warrantyDays: order.warranty?.days ? String(order.warranty.days) : '',
@@ -790,7 +801,7 @@ export default function OrderSlideOver({ order, open, onClose, onSave, onDelete 
           {tab === 'docs' && (
             <div>
               <OrderDocumentsEditor form={form} set={key => e => set(key)(e)} />
-              <OrderDocumentsAdminPreview order={previewOrder} company={cmsData?.company} />
+              <OrderDocumentsAdminPreview order={previewOrder} company={cmsData?.company} settings={companySettings} />
             </div>
           )}
         </div>

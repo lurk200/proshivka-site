@@ -7,6 +7,8 @@ const PRINT_KEYS = [
   'recommendations',
   'estimatedReadyAt',
   'managerName',
+  'masterName',
+  'serialNumber',
 ];
 
 export function defaultPrintFields() {
@@ -19,6 +21,8 @@ export function defaultPrintFields() {
     recommendations: '',
     estimatedReadyAt: '',
     managerName: '',
+    masterName: '',
+    serialNumber: '',
   };
 }
 

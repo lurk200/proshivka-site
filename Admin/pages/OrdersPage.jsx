@@ -3,8 +3,9 @@ import {
   AlertTriangle, Archive, Check, CheckCheck, CheckSquare,
   ChevronDown, Download, ExternalLink, Flame, Loader2,
   MoreHorizontal, Package, Plus, RefreshCw, Search,
-  Square, Trash2, X, Zap,
+  Square, Trash2, X, Zap, Calendar,
 } from 'lucide-react';
+import PhoneMaskInput from '../components/ui/PhoneMaskInput';
 import { PageHeader, ConfirmModal } from '../components/ui';
 import { ORDER_STATUSES } from '../../src/data/orderStatuses';
 import {
@@ -549,32 +550,118 @@ function BulkActionBar({ count, orders, selectedIds, onClear, onBulkStatus, onBu
   );
 }
 
+// ─── CreateModal constants ─────────────────────────────────────────────────────
+
+const BRANDS = ['iPhone', 'Samsung', 'Xiaomi', 'Redmi', 'POCO', 'Realme', 'Huawei', 'iPad', 'MacBook', 'Другое'];
+
+const REASONS = [
+  'Замена дисплея', 'Замена аккумулятора', 'Замена разъема зарядки',
+  'Замена задней крышки', 'Замена корпуса', 'Замена камеры',
+  'Замена динамика', 'Замена микрофона', 'Замена кнопок',
+  'Не включается', 'После попадания влаги', 'Диагностика', 'Другое',
+];
+
+const APPEARANCES = [
+  'Без повреждений', 'Царапины и потертости', 'Разбита задняя крышка',
+  'Разбито стекло', 'Вмятины на корпусе', 'Следы вскрытия',
+  'Следы влаги', 'Потертости корпуса',
+];
+
+const KIT_ITEMS = [
+  'Телефон', 'SIM карта', 'Карта памяти', 'Кабель',
+  'Зарядное устройство', 'Коробка', 'Чехол', 'Документы',
+];
+
+const READY_OFFSETS = [
+  { label: '+1 д', days: 1 }, { label: '+3 д', days: 3 },
+  { label: '+5 д', days: 5 }, { label: '+7 д', days: 7 },
+  { label: '+14 д', days: 14 },
+];
+
+function todayPlusDays(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatReadyDate(iso) {
+  if (!iso) return '';
+  try {
+    return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
+  } catch { return iso; }
+}
+
+const EMPTY_FORM = {
+  brand: '', model: '', serialNumber: '',
+  clientName: '', clientPhone: '',
+  reason: '', reasonCustom: '',
+  appearances: [], appearanceCustom: '',
+  kit: new Set(['Телефон']), kitComment: '',
+  estimatedReadyAt: todayPlusDays(3),
+  managerName: '', masterName: '',
+  status: 'accepted',
+};
+
 // ─── CreateModal ───────────────────────────────────────────────────────────────
 
 function CreateModal({ open, onCreate, onClose }) {
-  const [form, setForm] = useState({ device: '', clientName: '', clientPhone: '', status: 'accepted', cost: '', managerName: '', note: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [reasonSearch, setReasonSearch] = useState('');
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const inputCls = 'w-full px-3.5 py-2.5 rounded-xl bg-[#0c0d10] border border-white/[0.08] text-[#f3f4f6] text-[13.5px] placeholder:text-[#4b5563] focus:outline-none focus:border-[#84CC16]/50 focus:ring-1 focus:ring-[#84CC16]/20 transition-colors';
+  const inputCls = 'w-full px-3 py-2.5 rounded-xl bg-[#0c0d10] border border-white/[0.08] text-[#f3f4f6] text-[13.5px] placeholder:text-[#4b5563] focus:outline-none focus:border-[#84CC16]/50 focus:ring-1 focus:ring-[#84CC16]/20 transition-colors';
+  const labelCls = 'block text-[11px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide';
+  const chipBase = 'px-2.5 py-1 rounded-lg text-[12px] font-medium transition-colors cursor-pointer whitespace-nowrap border';
+  const chipOff = `${chipBase} bg-white/[0.04] border-white/[0.08] text-[#9ca3af] hover:border-white/[0.18] hover:text-white`;
+  const chipOn = `${chipBase} bg-[#84CC16]/15 border-[#84CC16]/40 text-[#84CC16]`;
+
+  const toggleAppearance = (v) => set('appearances',
+    form.appearances.includes(v) ? form.appearances.filter(x => x !== v) : [...form.appearances, v]
+  );
+  const toggleKit = (v) => {
+    const next = new Set(form.kit);
+    next.has(v) ? next.delete(v) : next.add(v);
+    set('kit', next);
+  };
+
+  const filteredReasons = reasonSearch
+    ? REASONS.filter(r => r.toLowerCase().includes(reasonSearch.toLowerCase()))
+    : REASONS;
+
+  const buildPayload = () => {
+    const device = [form.brand !== 'Другое' ? form.brand : '', form.model].filter(Boolean).join(' ').trim() || 'Устройство';
+    const kitArr = [...form.kit];
+    if (form.kitComment.trim()) kitArr.push(form.kitComment.trim());
+    const appearanceArr = [...form.appearances];
+    if (form.appearanceCustom.trim()) appearanceArr.push(form.appearanceCustom.trim());
+    const reason = form.reason === 'Другое' ? (form.reasonCustom || 'Другое') : form.reason;
+    return {
+      device,
+      serialNumber: form.serialNumber.trim() || undefined,
+      clientName: form.clientName.trim() || undefined,
+      clientPhone: form.clientPhone || undefined,
+      reason: reason || undefined,
+      appearance: appearanceArr.join(', ') || undefined,
+      kit: kitArr.join(', ') || undefined,
+      estimatedReadyAt: form.estimatedReadyAt || undefined,
+      managerName: form.managerName.trim() || undefined,
+      masterName: form.masterName.trim() || undefined,
+      status: form.status,
+      historyNote: 'Заказ создан',
+    };
+  };
 
   const handleCreate = async () => {
-    if (!form.device.trim()) { setError('Укажите устройство'); return; }
-    setSaving(true);
-    setError('');
+    const payload = buildPayload();
+    if (!payload.device || payload.device === 'Устройство') { setError('Укажите устройство'); return; }
+    setSaving(true); setError('');
     try {
-      await onCreate({
-        device: form.device,
-        status: form.status,
-        cost: form.cost || undefined,
-        clientName: form.clientName || undefined,
-        clientPhone: form.clientPhone || undefined,
-        managerName: form.managerName || undefined,
-        historyNote: form.note || 'Заказ создан',
-      });
-      setForm({ device: '', clientName: '', clientPhone: '', status: 'accepted', cost: '', managerName: '', note: '' });
+      await onCreate(payload);
+      setForm(EMPTY_FORM);
+      setReasonSearch('');
       onClose();
     } catch (e) {
       setError(e.message || 'Ошибка создания');
@@ -585,50 +672,148 @@ function CreateModal({ open, onCreate, onClose }) {
 
   if (!open) return null;
 
+  const section = (title) => (
+    <p className="text-[10px] font-mono uppercase tracking-widest text-[#4b5563] pt-1 pb-0.5">{title}</p>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#14161a] border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-[#14161a] border border-white/[0.1] rounded-2xl shadow-2xl flex flex-col max-h-[92dvh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] shrink-0">
           <h2 className="text-[15px] font-semibold text-white">Новый заказ</h2>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
+        {/* Scrollable body */}
+        <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1">
+
+          {/* ── Клиент ── */}
+          {section('Клиент')}
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Устройство *</label>
-              <input className={inputCls} value={form.device} onChange={set('device')} placeholder="iPhone 14 Pro, Samsung S23…" autoFocus />
+            <div>
+              <label className={labelCls}>Имя</label>
+              <input className={inputCls} value={form.clientName} onChange={e => set('clientName', e.target.value)} placeholder="Иван Петров" autoFocus />
             </div>
             <div>
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Клиент</label>
-              <input className={inputCls} value={form.clientName} onChange={set('clientName')} placeholder="Имя" />
-            </div>
-            <div>
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Телефон</label>
-              <input className={inputCls} value={form.clientPhone} onChange={set('clientPhone')} placeholder="+7 999 000 00 00" />
-            </div>
-            <div>
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Стоимость, ₽</label>
-              <input className={inputCls} type="number" min={0} value={form.cost} onChange={set('cost')} placeholder="0" />
-            </div>
-            <div>
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Менеджер</label>
-              <input className={inputCls} value={form.managerName} onChange={set('managerName')} />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Статус</label>
-              <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={set('status')}>
-                {ORDER_STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-[12px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide">Первая запись в историю</label>
-              <input className={inputCls} value={form.note} onChange={set('note')} placeholder="Заказ создан менеджером…" />
+              <label className={labelCls}>Телефон</label>
+              <PhoneMaskInput className={inputCls} value={form.clientPhone} onChange={v => set('clientPhone', v)} />
             </div>
           </div>
+
+          {/* ── Устройство ── */}
+          {section('Устройство')}
+          <div>
+            <label className={labelCls}>Бренд</label>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {BRANDS.map(b => (
+                <button key={b} type="button" onClick={() => set('brand', form.brand === b ? '' : b)}
+                  className={form.brand === b ? chipOn : chipOff}>{b}</button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Модель *</label>
+                <input className={inputCls} value={form.model} onChange={e => set('model', e.target.value)}
+                  placeholder={form.brand && form.brand !== 'Другое' ? `${form.brand} …` : 'Galaxy S24, 14 Pro…'} />
+              </div>
+              <div>
+                <label className={labelCls}>Серийный номер</label>
+                <input className={inputCls} value={form.serialNumber} onChange={e => set('serialNumber', e.target.value)} placeholder="IMEI / S/N (необязательно)" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Причина обращения ── */}
+          {section('Причина обращения')}
+          <div>
+            <input className={`${inputCls} mb-2`} value={reasonSearch}
+              onChange={e => setReasonSearch(e.target.value)} placeholder="Поиск причины…" />
+            <div className="flex flex-wrap gap-1.5">
+              {filteredReasons.map(r => (
+                <button key={r} type="button" onClick={() => { set('reason', form.reason === r ? '' : r); setReasonSearch(''); }}
+                  className={form.reason === r ? chipOn : chipOff}>{r}</button>
+              ))}
+            </div>
+            {form.reason === 'Другое' && (
+              <input className={`${inputCls} mt-2`} value={form.reasonCustom}
+                onChange={e => set('reasonCustom', e.target.value)} placeholder="Опишите проблему…" />
+            )}
+          </div>
+
+          {/* ── Внешний вид ── */}
+          {section('Внешний вид')}
+          <div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {APPEARANCES.map(a => (
+                <button key={a} type="button" onClick={() => toggleAppearance(a)}
+                  className={form.appearances.includes(a) ? chipOn : chipOff}>{a}</button>
+              ))}
+            </div>
+            <input className={inputCls} value={form.appearanceCustom}
+              onChange={e => set('appearanceCustom', e.target.value)} placeholder="Дополнительно…" />
+          </div>
+
+          {/* ── Комплектация ── */}
+          {section('Комплектация')}
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-3 mb-2">
+              {KIT_ITEMS.map(k => (
+                <label key={k} className="flex items-center gap-2 cursor-pointer select-none">
+                  <span className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${
+                    form.kit.has(k) ? 'bg-[#84CC16] border-[#84CC16]' : 'border-white/[0.18] bg-white/[0.04]'
+                  }`} onClick={() => toggleKit(k)}>
+                    {form.kit.has(k) && <Check className="w-3 h-3 text-[#0c0d10]" strokeWidth={3} />}
+                  </span>
+                  <span className="text-[13px] text-[#d1d5db]" onClick={() => toggleKit(k)}>{k}</span>
+                </label>
+              ))}
+            </div>
+            <input className={inputCls} value={form.kitComment}
+              onChange={e => set('kitComment', e.target.value)} placeholder="Дополнительно…" />
+          </div>
+
+          {/* ── Ориентировочная дата ── */}
+          {section('Ориентировочная готовность')}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-[#4b5563] shrink-0" />
+              <input type="date" className={`${inputCls} flex-1`} value={form.estimatedReadyAt}
+                onChange={e => set('estimatedReadyAt', e.target.value)} />
+            </div>
+            {form.estimatedReadyAt && (
+              <p className="text-[12px] text-[#84CC16] mb-2">{formatReadyDate(form.estimatedReadyAt)}</p>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {READY_OFFSETS.map(({ label, days }) => (
+                <button key={label} type="button" onClick={() => set('estimatedReadyAt', todayPlusDays(days))}
+                  className={chipOff}>{label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Менеджер / Мастер ── */}
+          {section('Сотрудники')}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Менеджер</label>
+              <input className={inputCls} value={form.managerName} onChange={e => set('managerName', e.target.value)} placeholder="Имя менеджера" />
+            </div>
+            <div>
+              <label className={labelCls}>Мастер</label>
+              <input className={inputCls} value={form.masterName} onChange={e => set('masterName', e.target.value)} placeholder="Имя мастера" />
+            </div>
+          </div>
+
+          {/* ── Статус ── */}
+          {section('Начальный статус')}
+          <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={e => set('status', e.target.value)}>
+            {ORDER_STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
 
           {error && (
             <p className="text-[13px] text-red-400 flex items-center gap-1.5">
@@ -637,17 +822,15 @@ function CreateModal({ open, onCreate, onClose }) {
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-white/[0.06] flex gap-3">
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#84CC16] text-[#0c0d10] font-semibold text-[13.5px] hover:bg-[#9be02a] disabled:opacity-50 transition-colors"
-          >
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-white/[0.06] flex gap-3 shrink-0">
+          <button type="button" onClick={handleCreate} disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#84CC16] text-[#0c0d10] font-semibold text-[13.5px] hover:bg-[#9be02a] disabled:opacity-50 transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Создание…' : 'Создать заказ'}
           </button>
-          <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-xl border border-white/[0.1] text-[#9ca3af] hover:bg-white/[0.04] transition-colors text-[13.5px]">
+          <button type="button" onClick={onClose}
+            className="px-4 py-2.5 rounded-xl border border-white/[0.1] text-[#9ca3af] hover:bg-white/[0.04] transition-colors text-[13.5px]">
             Отмена
           </button>
         </div>
