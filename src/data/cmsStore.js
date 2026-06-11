@@ -43,6 +43,22 @@ function mergeCompany(company) {
   return merged;
 }
 
+import { resolveYandexMapConfig } from '../utils/yandexMap';
+
+function normalizeYandexMap(savedMap, baseMap) {
+  const merged = { ...baseMap, ...savedMap };
+  const resolved = resolveYandexMapConfig(merged);
+
+  return {
+    ...merged,
+    embedUrl: resolved.embedUrl,
+    orgUrl: resolved.orgUrl,
+    openUrl: resolved.routeUrl,
+    routeLabel: resolved.routeLabel,
+    label: merged.label ?? resolved.fallbackLabel,
+  };
+}
+
 function mergeMainHome(saved) {
   const base = createDefaultMainHome();
   if (!saved) return base;
@@ -62,7 +78,7 @@ function mergeMainHome(saved) {
       ...base.about,
       ...saved.about,
       servicePhoto: { ...base.about.servicePhoto, ...saved.about?.servicePhoto },
-      yandexMap: { ...base.about.yandexMap, ...saved.about?.yandexMap },
+      yandexMap: normalizeYandexMap(saved.about?.yandexMap, base.about.yandexMap),
     },
     banners: saved.banners?.length ? saved.banners : base.banners,
   };

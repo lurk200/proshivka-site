@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, ExternalLink, ArrowRight } from 'lucide-react';
+import { MapPin, Clock, Phone, ArrowRight } from 'lucide-react';
 import { Reveal } from '../ui';
+import YandexMapBlock from '../ui/YandexMapBlock';
+import SafeImage from '../ui/SafeImage';
 import { useCms } from '../../context/CmsContext';
 import { getPublishedWorks } from '../../data/worksContent';
 import { SocialLinksRow } from '../ui/SocialLinks';
@@ -78,7 +80,7 @@ export default function HomeAboutSection({ company }) {
 
           <Reveal delay={100}>
             <figure className="relative overflow-hidden rounded-[20px] border border-[var(--border-subtle)] shadow-[var(--shadow-card)] aspect-[4/3] sm:aspect-[16/10]">
-              <img
+              <SafeImage
                 src={about.servicePhoto.src}
                 alt={about.servicePhoto.alt}
                 className="absolute inset-0 h-full w-full object-cover"
@@ -98,35 +100,8 @@ export default function HomeAboutSection({ company }) {
           </Reveal>
         </div>
 
-        <Reveal delay={80} className="min-w-0 order-1 lg:order-2">
-          <div className="h-full flex flex-col rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden shadow-[var(--shadow-soft)] min-h-[280px] sm:min-h-[320px] lg:min-h-0 lg:h-full">
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FC3F1D]/15 text-[11px] font-bold text-[#FC3F1D] shrink-0">
-                  Я
-                </span>
-                <span className="text-[14px] font-medium text-[var(--text-primary)] truncate">Яндекс Карты</span>
-              </div>
-              <a
-                href={about.yandexMap.openUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] font-mono text-[#84CC16] hover:underline shrink-0"
-              >
-                Маршрут
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-            <div className="relative flex-1 min-h-[240px] sm:min-h-[280px] lg:min-h-[360px]">
-              <iframe
-                title="Карта — расположение сервиса"
-                src={about.yandexMap.embedUrl}
-                className="absolute inset-0 h-full w-full border-0"
-                loading="lazy"
-                allowFullScreen
-              />
-            </div>
-          </div>
+        <Reveal delay={80} className="min-w-0 order-1 lg:order-2 w-full">
+          <YandexMapBlock map={about.yandexMap} />
         </Reveal>
       </div>
 

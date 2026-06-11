@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" fill="none">
+  <rect width="1200" height="800" fill="#12141a"/>
+  <rect x="80" y="80" width="1040" height="640" rx="32" stroke="#84CC16" stroke-opacity="0.25" stroke-width="2"/>
+  <path d="M600 260c-55.2 0-100 44.8-100 100 0 75 100 180 100 180s100-105 100-180c0-55.2-44.8-100-100-100zm0 136a36 36 0 1 1 0-72 36 36 0 0 1 0 72z" fill="#84CC16" fill-opacity="0.85"/>
+  <text x="600" y="620" text-anchor="middle" fill="#9ca3af" font-family="Inter, Arial, sans-serif" font-size="28"> (</text>
+</svg>

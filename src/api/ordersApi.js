@@ -96,3 +96,8 @@ export async function fetchOrderNotificationEvents(orderId) {
   });
   return parseResponse(res);
 }
+
+export async function fetchNotificationDeliveryStatus() {
+  const res = await fetch(`${NOTIFY_API}/delivery-status`, { headers: adminHeaders() });
+  return parseResponse(res);
+}

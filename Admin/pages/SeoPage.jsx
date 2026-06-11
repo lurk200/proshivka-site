@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCms } from '../../src/context/CmsContext';
+import { useAdminPersist } from '../hooks/useAdminPersist';
 import { SEO_PAGE_LIST } from '../../src/data/seoContent';
 import { useSiteDraft } from '../hooks/useSiteDraft';
 import {
@@ -312,14 +312,13 @@ function PromotionTab({ draft }) {
 }
 
 export default function SeoPage() {
-  const { updateContent } = useCms();
+  const { persist, saving, saved, saveError } = useAdminPersist();
   const { draft, setDraft, reset } = useSiteDraft('siteSeo');
   const [tab, setTab] = useState('global');
   const [pageId, setPageId] = useState('home');
-  const [saved, setSaved] = useState(false);
 
   const save = () => {
-    updateContent((prev) => {
+    void persist((prev) => {
       const siteSeo = structuredClone(draft);
       const next = { ...prev, siteSeo };
 
@@ -358,8 +357,6 @@ export default function SeoPage() {
 
       return next;
     });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   const mainTabs = [
@@ -399,7 +396,7 @@ export default function SeoPage() {
       {tab === 'promotion' ? <PromotionTab draft={draft} /> : null}
 
       <AdminCard className="mt-6">
-        <SaveBar onSave={save} onReset={reset} saved={saved} />
+        <SaveBar onSave={save} onReset={reset} saved={saved} saving={saving} saveError={saveError} />
       </AdminCard>
     </>
   );

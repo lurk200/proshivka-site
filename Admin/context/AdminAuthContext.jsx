@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import {
+  ADMIN_API_KEY,
+  ADMIN_AUTH_KEY,
+  clearAdminSession,
+} from '../../src/utils/adminSession';
 
-const AUTH_KEY = 'proshivka-admin-auth';
-const API_KEY = 'proshivka-admin-api-key';
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'proshivka';
 
 const AdminAuthContext = createContext(null);
@@ -12,21 +15,20 @@ export function AdminAuthProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(sessionStorage.getItem(AUTH_KEY) === '1');
+    setIsAuthenticated(sessionStorage.getItem(ADMIN_AUTH_KEY) === '1');
     setReady(true);
   }, []);
 
   const login = (password) => {
     if (password !== ADMIN_PASSWORD) return false;
-    sessionStorage.setItem(AUTH_KEY, '1');
-    sessionStorage.setItem(API_KEY, password);
+    sessionStorage.setItem(ADMIN_AUTH_KEY, '1');
+    sessionStorage.setItem(ADMIN_API_KEY, password);
     setIsAuthenticated(true);
     return true;
   };
 
   const logout = () => {
-    sessionStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(API_KEY);
+    clearAdminSession();
     setIsAuthenticated(false);
   };
 

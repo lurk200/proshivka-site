@@ -54,6 +54,7 @@ const STATUS_NOTIFY_MAP = {
 };
 
 function getSiteUrl(req) {
+  if (process.env.VITE_SITE_URL) return process.env.VITE_SITE_URL.replace(/\/$/, '');
   const proto = req.headers['x-forwarded-proto'] || 'http';
   const host = req.headers.host || 'localhost:5173';
   return `${proto}://${host}`;
@@ -164,6 +165,17 @@ function registerOrdersApi(server) {
       }
       if (req.method !== 'GET') { res.statusCode = 405; return res.end(); }
       return sendJson(res, 200, { analytics: buildAnalytics(listOrders()) });
+    }
+
+    // ── Admin: notification delivery status ──
+    if (url.pathname === '/api/admin/notifications/delivery-status') {
+      if (!isAdminRequest(req, url)) {
+        return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
+      }
+      if (req.method !== 'GET') { res.statusCode = 405; return res.end(); }
+      return sendJson(res, 200, {
+        webhookConfigured: Boolean(process.env.VITE_NOTIFY_WEBHOOK_URL),
+      });
     }
 
     // ── Admin: notifications templates ──

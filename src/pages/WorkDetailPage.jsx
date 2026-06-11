@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Phone } from 'lucide-react';
 import PageTransition from '../components/layout/PageTransition';
 import { Reveal } from '../components/ui';
+import SafeImage from '../components/ui/SafeImage';
 import { useCms } from '../context/CmsContext';
 import { findWorkById } from '../data/worksContent';
 
@@ -52,7 +53,7 @@ export default function WorkDetailPage() {
           <article className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <Reveal>
               <div className="relative overflow-hidden rounded-[20px] border border-[var(--border-subtle)] aspect-[16/10] lg:aspect-[4/3] shadow-[var(--shadow-card)]">
-                <img
+                <SafeImage
                   src={work.image}
                   alt={work.title}
                   className="absolute inset-0 h-full w-full object-cover"

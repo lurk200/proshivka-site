@@ -22,6 +22,7 @@ import { SocialLinksRow } from '../components/ui/SocialLinks';
 import { useCms } from '../context/CmsContext';
 import { getActiveSocialContacts } from '../utils/socialContacts';
 import { getAskMasterChannels, getTelHref, withWhatsappText } from '../utils/contactActions';
+import YandexMapBlock from '../components/ui/YandexMapBlock';
 
 function InfoRow({ icon: Icon, label, children }) {
   return (
@@ -45,7 +46,6 @@ export default function SendRepairPage() {
   const { cmsData } = useCms();
   const { company, sendRepair, mainHome } = cmsData;
   const about = mainHome.about;
-  const map = about.yandexMap;
   const socialContacts = getActiveSocialContacts(company.contacts);
   const phoneHref = getTelHref(company.phone);
   const channels = getAskMasterChannels(company.contacts);
@@ -309,38 +309,7 @@ export default function SendRepairPage() {
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-soft)] lg:min-h-full">
-                <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FC3F1D]/15 text-[11px] font-bold text-[#FC3F1D]">
-                      Я
-                    </span>
-                    <span className="truncate text-[14px] font-medium text-[var(--text-primary)]">
-                      Яндекс Карты
-                    </span>
-                  </div>
-                  {map.openUrl ? (
-                    <a
-                      href={map.openUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex shrink-0 items-center gap-1 font-mono text-[11px] text-[#84CC16] hover:underline"
-                    >
-                      {map.label ?? 'Маршрут'}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : null}
-                </div>
-                <div className="relative min-h-[280px] flex-1 sm:min-h-[360px]">
-                  <iframe
-                    title="Карта — расположение сервиса ПРОШИВКА"
-                    src={map.embedUrl}
-                    className="absolute inset-0 h-full w-full border-0"
-                    loading="lazy"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
+              <YandexMapBlock map={about.yandexMap} />
             </Reveal>
           </div>
         </div>

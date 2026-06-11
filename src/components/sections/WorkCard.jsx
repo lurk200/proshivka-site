@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2 } from 'lucide-react';
+import SafeImage from '../ui/SafeImage';
 
 export default function WorkCard({ work, className = '' }) {
   return (
@@ -7,7 +8,7 @@ export default function WorkCard({ work, className = '' }) {
       className={`group relative flex flex-col overflow-hidden rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-accent-hover)] hover:shadow-[var(--shadow-card)] ${className}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <img
+        <SafeImage
           src={work.image}
           alt={work.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"

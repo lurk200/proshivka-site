@@ -9,6 +9,7 @@ import {
   fetchNotificationTemplates,
   updateNotificationTemplate,
   fetchNotificationLog,
+  fetchNotificationDeliveryStatus,
 } from '../../../src/api/ordersApi';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -295,6 +296,13 @@ export default function NotificationsSettingsPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [loadingLog, setLoadingLog] = useState(true);
   const [activeTab, setActiveTab] = useState('templates');
+  const [webhookConfigured, setWebhookConfigured] = useState(null);
+
+  useEffect(() => {
+    fetchNotificationDeliveryStatus()
+      .then(d => setWebhookConfigured(d.webhookConfigured))
+      .catch(() => setWebhookConfigured(false));
+  }, []);
 
   const loadTemplates = useCallback(async () => {
     setLoadingTemplates(true);
@@ -347,13 +355,27 @@ export default function NotificationsSettingsPage() {
         }
       />
 
-      {/* Webhook notice */}
-      <div className="mb-5 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] text-[12.5px] text-[#9ca3af] leading-relaxed">
-        <p className="font-medium text-white mb-1">Настройка доставки</p>
-        Установите переменную <code className="text-[#84CC16] bg-[#84CC16]/10 px-1 rounded">VITE_NOTIFY_WEBHOOK_URL</code> в{' '}
-        <code className="text-[#84CC16] bg-[#84CC16]/10 px-1 rounded">.env</code> для получения событий на вашем сервере.
-        Без неё уведомления логируются со статусом <code className="text-amber-300 bg-amber-500/10 px-1 rounded">queued</code>.
-      </div>
+      {/* Webhook status banner */}
+      {webhookConfigured === false && (
+        <div className="mb-5 flex items-start gap-3 p-4 rounded-xl border border-red-500/30 bg-red-500/[0.07]">
+          <span className="mt-0.5 w-2 h-2 rounded-full bg-red-400 shrink-0 mt-1.5" />
+          <div className="text-[12.5px] leading-relaxed">
+            <p className="font-semibold text-red-300 mb-0.5">Доставка уведомлений не настроена</p>
+            <p className="text-[#9ca3af]">
+              Установите <code className="text-[#84CC16] bg-[#84CC16]/10 px-1 rounded">VITE_NOTIFY_WEBHOOK_URL</code> в{' '}
+              <code className="text-[#84CC16] bg-[#84CC16]/10 px-1 rounded">.env</code> для получения событий.
+              Без этого уведомления попадают в лог со статусом{' '}
+              <code className="text-amber-300 bg-amber-500/10 px-1 rounded">queued</code> и не доставляются.
+            </p>
+          </div>
+        </div>
+      )}
+      {webhookConfigured === true && (
+        <div className="mb-5 flex items-center gap-3 p-3.5 rounded-xl border border-[#84CC16]/25 bg-[#84CC16]/[0.06]">
+          <span className="w-2 h-2 rounded-full bg-[#84CC16] shrink-0" />
+          <p className="text-[12.5px] text-[#84CC16]">Webhook настроен — уведомления будут доставляться</p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5 border-b border-white/[0.06] pb-0">

@@ -1,12 +1,11 @@
 import React from 'react';
 import { Smartphone } from 'lucide-react';
 import { Reveal, Button, TelemetryWidget } from '../ui';
+import SafeImage from '../ui/SafeImage';
 import ServiceNavGrid from './ServiceNavGrid';
 
 export default function HeroSection({ data, showSoftwareRepairCta = false }) {
-  const heroImage =
-    data.imageUrl ??
-    'https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&q=80&w=1200';
+  const heroImage = data.imageUrl ?? '/images/placeholder.svg';
   return (
     <section id="hero" className="pt-32 pb-24 md:pt-[12rem] md:pb-32 overflow-hidden relative border-b border-[var(--border-subtle)] flex min-h-[90vh] items-center transition-colors duration-700">
       <div className="absolute inset-0 bg-diagnostic-grid z-0 pointer-events-none transition-opacity duration-700" style={{ opacity: 'var(--grid-opacity)' }}></div>
@@ -45,7 +44,7 @@ export default function HeroSection({ data, showSoftwareRepairCta = false }) {
         <Reveal delay={300} className="relative w-full aspect-[4/3] lg:aspect-[4/5] max-h-[640px] flex items-center justify-center lg:justify-end group perspective-1000 z-10">
           <figure className="relative w-full h-full rounded-[24px] overflow-hidden border border-[var(--border-subtle)] shadow-[var(--shadow-card)] transform-gpu transition-transform duration-[1200ms] ease-premium">
             <div className="absolute inset-0 bg-diagnostic-grid mix-blend-overlay z-10 pointer-events-none transition-opacity duration-700" style={{ opacity: 'var(--grid-opacity)' }}></div>
-            <img src={heroImage} alt="Диагностика" loading="eager" className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-[1500ms] ease-premium will-change-transform" style={{ opacity: 'var(--hero-img-opacity)', mixBlendMode: 'var(--hero-img-blend)' }} />
+            <SafeImage src={heroImage} alt="Диагностика" loading="eager" className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-[1500ms] ease-premium will-change-transform" style={{ opacity: 'var(--hero-img-opacity)', mixBlendMode: 'var(--hero-img-blend)' }} />
             <div className="absolute inset-0 pointer-events-none transition-colors duration-700" style={{ background: 'var(--hero-gradient)' }}></div>
             <figcaption className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
               <div className="w-32 h-32 rounded-full border border-[#84CC16]/20 flex items-center justify-center relative">

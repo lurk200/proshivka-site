@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { repairPriceApiPlugin } from './vite-plugins/repairPriceApi.js'
 import { ordersApiPlugin } from './vite-plugins/ordersApi.js'
 import { cmsApiPlugin } from './vite-plugins/cmsApi.js'
+import { analyticsApiPlugin } from './vite-plugins/analyticsApi.js'
 
 export default defineConfig({
   plugins: [
@@ -12,6 +13,7 @@ export default defineConfig({
     repairPriceApiPlugin(),
     ordersApiPlugin(),
     cmsApiPlugin(),
+    analyticsApiPlugin(),
   ],
   server: {
     host: '127.0.0.1',

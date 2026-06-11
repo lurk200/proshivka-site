@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Reveal } from '../ui';
+import SafeImage from '../ui/SafeImage';
 import { useCms } from '../../context/CmsContext';
 
 const cardBaseClass =
@@ -31,7 +32,7 @@ function ShortBannerCard({ banner, index }) {
     <li className="home-banner-item min-w-0 list-none snap-start">
       <Reveal delay={index * 40} immediate className="block h-full w-full min-w-0">
         <Link to={banner.path} className={`${cardBaseClass} aspect-[3/4] h-full w-full sm:aspect-[4/5] md:aspect-[9/16]`}>
-          <img
+          <SafeImage
             src={banner.image}
             alt={banner.title}
             loading={index < 4 ? 'eager' : 'lazy'}

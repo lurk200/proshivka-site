@@ -5,7 +5,7 @@ export const HOME_SERVICE_BANNERS = [
     title: 'Программный ремонт',
     description: 'Прошивка, разблокировка и восстановление системы без потери важных данных.',
     advantages: ['Сохранение информации', 'Снятие блокировок', 'Восстановление после сбоев'],
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c1f58b?auto=format&fit=crop&q=80&w=800',
+    image: '/images/placeholder.svg',
     path: '/programmnyj-remont',
   },
   {
@@ -13,7 +13,7 @@ export const HOME_SERVICE_BANNERS = [
     title: 'Замена разбитого стекла',
     description: 'Меняем только верхнее стекло — оригинальная матрица и цвета сохраняются.',
     advantages: ['Родная OLED/AMOLED матрица', 'True Tone и Face ID', 'До 60% выгоднее модуля'],
-    image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&q=80&w=800',
+    image: '/images/placeholder.svg',
     path: '/services/glass-replacement',
   },
   {
@@ -21,7 +21,7 @@ export const HOME_SERVICE_BANNERS = [
     title: 'Замена аккумуляторов',
     description: 'Диагностика износа, калибровка BMS и установка премиум-аккумуляторов.',
     advantages: ['Честная ёмкость mAh', 'Без ошибки «Неизвестная деталь»', 'Гарантия до 1 года'],
-    image: 'https://images.unsplash.com/photo-1625948515291-6969e279ed8a?auto=format&fit=crop&q=80&w=800',
+    image: '/images/placeholder.svg',
     path: '/services/battery-replacement',
   },
   {
@@ -29,7 +29,7 @@ export const HOME_SERVICE_BANNERS = [
     title: 'Восстановление после влаги',
     description: 'Ультразвуковая очистка и ремонт плат после залития жидкостью.',
     advantages: ['Остановка коррозии', 'Спасение данных', 'Компонентный ремонт'],
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800',
+    image: '/images/placeholder.svg',
     path: '/services/water-damage',
   },
   {
@@ -37,7 +37,7 @@ export const HOME_SERVICE_BANNERS = [
     title: 'Модульный ремонт',
     description: 'Замена экранов, камер, разъёмов и других узлов премиум-класса.',
     advantages: ['Оригинальные запчасти', 'Точная диагностика', 'Прозрачная смета'],
-    image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=800',
+    image: '/images/placeholder.svg',
     path: '/services/modular-repair',
   },
 ];

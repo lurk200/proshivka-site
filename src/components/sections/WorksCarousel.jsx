@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Reveal } from '../ui';
+import SafeImage from '../ui/SafeImage';
 
 const slideVariants = {
   enter: (dir) => ({ opacity: 0, x: dir > 0 ? 48 : -48 }),
@@ -42,7 +43,7 @@ export default function WorksCarousel({ works }) {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0"
             >
-              <img
+              <SafeImage
                 src={current.image}
                 alt={current.title}
                 className="banner-card-img absolute inset-0 h-full w-full object-cover"

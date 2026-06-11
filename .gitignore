@@ -20,6 +20,9 @@ dist-ssr
 server/orders/data/orders.json
 server/notifications/data/events.json
 server/prise/data/search-analytics.json
+server/prise/data/services.json
+server/prise/data/suppliers.json
+server/analytics/data/
 server/cms/data/site-content.json
 
 # Editor directories and files

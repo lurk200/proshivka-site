@@ -2,8 +2,9 @@
   "enabled": true,
   "city": "Ставрополь",
   "labor": {
-    "display": 0,
-    "battery": 1000
+    "display": 1500,
+    "battery": 1000,
+    "port": 1500
   },
   "markup": {
     "globalPercent": 100,
@@ -33,6 +34,11 @@
       "default": "40–60 мин",
       "premium": "1–2 часа",
       "premiumThreshold": 8000
+    },
+    "port": {
+      "default": "1–2 часа",
+      "premium": "2–3 часа",
+      "premiumThreshold": 6000
     }
   },
   "maxOptionsPerCategory": 8

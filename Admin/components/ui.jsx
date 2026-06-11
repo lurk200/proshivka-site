@@ -102,7 +102,7 @@ export function Select({ children, ...props }) {
 
 // ─── SaveBar ──────────────────────────────────────────────────────────────
 
-export function SaveBar({ onSave, onReset, saving, saved }) {
+export function SaveBar({ onSave, onReset, saving, saved, saveError }) {
   return (
     <div className="sticky bottom-0 z-20 -mx-6 -mb-6 mt-8 px-6 py-4 bg-[#14161a]/95 backdrop-blur border-t border-white/[0.06] flex flex-wrap items-center gap-3 rounded-b-2xl">
       <button
@@ -122,10 +122,14 @@ export function SaveBar({ onSave, onReset, saving, saved }) {
           Сбросить
         </button>
       ) : null}
-      {saved ? <span className="text-[#84CC16] text-[13px] ml-auto flex items-center gap-1.5">
-        <CheckCircle className="w-4 h-4" />
-        Изменения сохранены
-      </span> : null}
+      {saveError ? (
+        <span className="text-[#f87171] text-[13px] ml-auto">{saveError}</span>
+      ) : saved ? (
+        <span className="text-[#84CC16] text-[13px] ml-auto flex items-center gap-1.5">
+          <CheckCircle className="w-4 h-4" />
+          Сохранено на сервер — видно всем
+        </span>
+      ) : null}
     </div>
   );
 }

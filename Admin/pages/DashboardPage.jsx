@@ -9,6 +9,7 @@ import {
 import { useCms } from '../../src/context/CmsContext';
 import { PAGE_KEYS } from '../../src/data/cmsStore';
 import { PageHeader, AdminCard, StatCard, Badge } from '../components/ui';
+import CmsBackupPanel from '../components/CmsBackupPanel';
 import { useChangeHistory } from '../hooks/useChangeHistory';
 import { fetchOrdersAdmin } from '../../src/api/ordersApi';
 
@@ -53,7 +54,7 @@ function formatRelative(isoStr) {
 function StatusDot({ status }) {
   const colors = {
     accepted: 'bg-blue-400',
-    diagnosed: 'bg-purple-400',
+    diagnostics: 'bg-violet-400',
     in_progress: 'bg-amber-400',
     waiting_parts: 'bg-orange-400',
     ready: 'bg-[#84CC16]',
@@ -122,6 +123,8 @@ export default function DashboardPage() {
           ) : null
         }
       />
+
+      <CmsBackupPanel />
 
       {/* ── KPI Stats ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

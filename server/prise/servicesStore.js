@@ -411,6 +411,20 @@ const DEFAULT_SERVICES = [
   },
 ];
 
+// ── Auto-init: persist defaults to disk on first run ─────────────────────────
+
+function initializeDefaults() {
+  ensureDir();
+  if (!fs.existsSync(SERVICES_FILE)) {
+    try { fs.writeFileSync(SERVICES_FILE, JSON.stringify(DEFAULT_SERVICES, null, 2), 'utf8'); } catch {}
+  }
+  if (!fs.existsSync(SUPPLIERS_FILE)) {
+    try { fs.writeFileSync(SUPPLIERS_FILE, JSON.stringify(DEFAULT_SUPPLIERS, null, 2), 'utf8'); } catch {}
+  }
+}
+
+initializeDefaults();
+
 // ── Services ──────────────────────────────────────────────────────────────────
 
 export function listServices({ category, deviceType, partType, brand, search, archived, available } = {}) {

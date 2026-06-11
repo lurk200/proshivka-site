@@ -22,7 +22,7 @@ export function createDefaultPageContent() {
         successRate: '98% ВОССТАНОВЛЕНИЙ',
       },
       imageUrl:
-        'https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&q=80&w=1200',
+        '/images/placeholder.svg',
       primaryButton: 'Узнать стоимость восстановления',
       secondaryButton: 'Задать вопрос инженеру',
     },

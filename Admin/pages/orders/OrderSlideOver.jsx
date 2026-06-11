@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   X, Phone, User, Cpu, Clock, FileText, DollarSign,
   MessageSquare, Save, Trash2, Printer, ChevronDown, CheckCircle,
-  AlertTriangle, Bell, TrendingUp, Calculator,
+  AlertTriangle, Bell, TrendingUp, Calculator, Search,
 } from 'lucide-react';
 import { useCms } from '../../../src/context/CmsContext';
 import { Field, Input, AdminTabs, ConfirmModal } from '../../components/ui';
@@ -20,6 +20,7 @@ import {
 import {
   fetchOrderNotificationEvents,
 } from '../../../src/api/ordersApi';
+import { fetchServices } from '../../../src/prise/api/repairPriceApi';
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
@@ -213,6 +214,101 @@ function NotificationLog({ orderId }) {
   );
 }
 
+// ─── Service picker ───────────────────────────────────────────────────────────
+
+function ServicePicker({ onPick }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef(null);
+
+  const search = (q) => {
+    setQuery(q);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (!q.trim()) { setResults([]); return; }
+      setLoading(true);
+      try {
+        const items = await fetchServices({ search: q.trim() });
+        setResults(items.slice(0, 8));
+      } catch {}
+      finally { setLoading(false); }
+    }, 250);
+  };
+
+  const pick = (svc) => {
+    onPick(svc);
+    setOpen(false);
+    setQuery('');
+    setResults([]);
+  };
+
+  const formatPrice = (svc) => {
+    if (svc.price != null) return svc.price;
+    return svc.priceFrom ?? svc.priceTo ?? 0;
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-center gap-2 h-9 rounded-xl border border-dashed border-white/[0.1] text-[12.5px] text-[#6b7280] hover:text-white hover:border-white/[0.2] transition-colors"
+      >
+        <Search className="w-3.5 h-3.5" />Выбрать из прайса
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-[#84CC16]/20 bg-[#84CC16]/[0.04] p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Search className="w-3.5 h-3.5 text-[#4b5563] shrink-0" />
+        <input
+          autoFocus
+          value={query}
+          onChange={e => search(e.target.value)}
+          placeholder="Название услуги…"
+          className="flex-1 bg-transparent text-[13px] text-white placeholder:text-[#4b5563] outline-none"
+        />
+        <button type="button" onClick={() => { setOpen(false); setQuery(''); setResults([]); }}
+          className="text-[#4b5563] hover:text-white transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {loading && <p className="text-[11px] text-[#4b5563] px-1">Поиск…</p>}
+      {!loading && query && results.length === 0 && (
+        <p className="text-[11px] text-[#4b5563] px-1">Не найдено</p>
+      )}
+      {results.length > 0 && (
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {results.map(svc => (
+            <button
+              key={svc.id}
+              type="button"
+              onClick={() => pick(svc)}
+              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-white/[0.06] transition-colors group"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13px] text-[#d1d5db] group-hover:text-white truncate">{svc.name}</span>
+                <span className="text-[12px] font-semibold text-[#84CC16] shrink-0">
+                  {svc.price != null
+                    ? `${Number(svc.price).toLocaleString('ru')} ₽`
+                    : svc.priceFrom != null
+                      ? `от ${Number(svc.priceFrom).toLocaleString('ru')} ₽`
+                      : '—'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#4b5563]">{svc.duration}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Financial tab ────────────────────────────────────────────────────────────
 
 function FinanceTab({ form, set }) {
@@ -223,11 +319,26 @@ function FinanceTab({ form, set }) {
   const autoTotal = diag + repair + parts - discount;
   const hasBreakdown = diag + repair + parts > 0;
 
+  const handleServicePick = (svc) => {
+    const price = svc.price ?? svc.priceFrom ?? 0;
+    const laborCost = svc.laborCost ?? price;
+    const partCost = svc.partCost ?? 0;
+    if (svc.category === 'diagnostic') {
+      set('diagCost')({ target: { value: String(price) } });
+    } else {
+      set('repairCost')({ target: { value: String(laborCost) } });
+      if (partCost > 0) set('partsCost')({ target: { value: String(partCost) } });
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[12px] text-[#9ca3af] leading-relaxed">
         Разбивка по составляющим стоимости. Итог рассчитывается автоматически, но можно указать вручную в поле «Стоимость заказа».
       </div>
+
+      {/* Service picker */}
+      <ServicePicker onPick={handleServicePick} />
 
       {/* Breakdown */}
       <div className="grid grid-cols-2 gap-3">

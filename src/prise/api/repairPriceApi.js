@@ -126,15 +126,6 @@ export async function deleteAdminSupplier(id) {
 
 // ── Search analytics ──────────────────────────────────────────────────────────
 
-export function trackSearch(query) {
-  // fire-and-forget; no await, no error bubbling
-  fetch('/api/services', {
-    method: 'GET',
-    // The server already logs the search when called via /api/services?search=
-    // This dedicated call is a no-op shim for explicit tracking from components
-  }).catch(() => {});
-}
-
 export async function fetchPopularSearches(limit = 10) {
   const res = await fetch(`/api/search-analytics/popular?limit=${limit}`);
   const data = await parseResponse(res);

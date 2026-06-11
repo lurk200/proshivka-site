@@ -26,6 +26,8 @@ function loadEnvFile(filePath) {
   return env;
 }
 
+const cmsDataDir = path.join(__dirname, '..', 'proshivka-data', 'cms');
+
 module.exports = {
   apps: [
     {
@@ -35,6 +37,7 @@ module.exports = {
       args: 'run preview',
       env: {
         NODE_ENV: 'production',
+        CMS_DATA_DIR: cmsDataDir,
         ...loadEnvFile(path.join(__dirname, '.env')),
       },
     },

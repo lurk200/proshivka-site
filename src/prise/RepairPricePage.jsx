@@ -16,8 +16,7 @@ import BrandRepairGuide from './components/BrandRepairGuide';
 import ServiceCatalog from './components/ServiceCatalog';
 import { useRepairPriceSearch } from './hooks/useRepairPriceSearch';
 
-const MAP_URL =
-  'https://yandex.ru/maps/?text=Ставрополь%20сервис%20ремонт%20телефонов';
+import { HOME_ABOUT } from '../data/homeAbout';
 
 const TABS = [
   { id: 'catalog', label: 'Каталог услуг', icon: List },
@@ -49,6 +48,7 @@ function TabBar({ active, onChange }) {
 export default function RepairPricePage() {
   const { cmsData } = useCms();
   const { company } = cmsData;
+  const mapUrl = cmsData.mainHome?.about?.yandexMap?.orgUrl ?? HOME_ABOUT.yandexMap.orgUrl;
   const search = useRepairPriceSearch();
   const [tab, setTab] = useState('catalog');
 
@@ -102,7 +102,7 @@ export default function RepairPricePage() {
                   <DesktopCta
                     phone={company.phone}
                     contacts={company.contacts}
-                    mapUrl={MAP_URL}
+                    mapUrl={mapUrl}
                   />
                 </div>
               </Reveal>
@@ -154,7 +154,7 @@ export default function RepairPricePage() {
                     <DesktopCta
                       phone={company.phone}
                       contacts={company.contacts}
-                      mapUrl={MAP_URL}
+                      mapUrl={mapUrl}
                     />
                   </div>
                 ) : null}

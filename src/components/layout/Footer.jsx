@@ -99,7 +99,7 @@ export default function Footer() {
               ))}
               <li>
                 <a
-                  href={mainHome.about.yandexMap.openUrl}
+                  href={mainHome.about.yandexMap.orgUrl ?? mainHome.about.yandexMap.openUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"

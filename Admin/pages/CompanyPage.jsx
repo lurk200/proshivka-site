@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { useCms } from '../../src/context/CmsContext';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../components/ui';
+import { useAdminPersist } from '../hooks/useAdminPersist';
 
 export default function CompanyPage() {
-  const { content, updateContent, defaults } = useCms();
+  const { content, defaults } = useCms();
+  const { persist, saving, saved, saveError } = useAdminPersist();
   const [draft, setDraft] = useState(content.company);
-  const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    updateContent((prev) => ({ ...prev, company: draft }));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    await persist((prev) => ({ ...prev, company: draft }));
   };
 
   const handleReset = () => {
@@ -83,7 +82,7 @@ export default function CompanyPage() {
             />
           </Field>
         </div>
-        <SaveBar onSave={handleSave} onReset={handleReset} saved={saved} />
+        <SaveBar onSave={handleSave} onReset={handleReset} saved={saved} saving={saving} saveError={saveError} />
       </AdminCard>
     </>
   );

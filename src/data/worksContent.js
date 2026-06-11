@@ -89,7 +89,7 @@ export function createEmptyWork() {
     model: 'Модель устройства',
     status: 'ГОТОВО',
     image:
-      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa8?auto=format&fit=crop&q=80&w=1200',
+      '/images/placeholder.svg',
     published: true,
     createdAt: today,
   });

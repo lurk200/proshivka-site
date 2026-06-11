@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useRepairSettings } from '../hooks/useRepairSettings';
 import { PageHeader, AdminCard, AdminTabs, Field, Input, SaveBar } from '../components/ui';
 import {
   REPAIR_TIER_KEYS,
@@ -663,6 +663,9 @@ function ServicesTab({ suppliers }) {
                     <td className="px-3 py-3 hidden xl:table-cell text-[#6b7280]">
                       {svc.supplierId ? (supplierMap[svc.supplierId]?.name ?? svc.supplierId) : '—'}
                     </td>
+                    <td className="px-3 py-3 hidden 2xl:table-cell text-center">
+                      <FreshnessDot status={svc.freshness} />
+                    </td>
                     <td className="px-3 py-3">
                       <button type="button" onClick={() => handleToggleAvailable(svc)}>
                         <Badge color={svc.archived ? 'red' : svc.available ? 'lime' : 'gray'}>
@@ -862,6 +865,117 @@ function SuppliersTab() {
   );
 }
 
+// ── Analytics tab ─────────────────────────────────────────────────────────────
+
+function AnalyticsTab() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setData(await fetchAdminSearchAnalytics());
+    } catch (e) {
+      setError(e.message || 'Ошибка загрузки');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <AdminCard><div className="h-40 animate-pulse bg-white/[0.03] rounded-xl" /></AdminCard>;
+  if (error) return <AdminCard><p className="text-amber-400 text-[13px]">{error}</p></AdminCard>;
+  if (!data) return null;
+
+  const { popular = [], gaps = [], stats = {} } = data;
+
+  return (
+    <div className="space-y-5">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Уникальных запросов', value: stats.totalUnique ?? 0 },
+          { label: 'Поисков всего', value: stats.countTotal ?? 0 },
+          { label: 'Запросов сегодня', value: stats.countToday ?? 0 },
+          { label: 'За неделю', value: stats.countWeek ?? 0 },
+        ].map(({ label, value }) => (
+          <AdminCard key={label} className="text-center py-4">
+            <p className="text-2xl font-semibold text-white">{value.toLocaleString('ru')}</p>
+            <p className="text-[11px] text-[#6b7280] mt-1">{label}</p>
+          </AdminCard>
+        ))}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Popular searches */}
+        <AdminCard>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-[#84CC16]" />
+            <h3 className="text-[14px] font-semibold text-white">Популярные запросы</h3>
+          </div>
+          {popular.length === 0 ? (
+            <p className="text-[13px] text-[#6b7280]">Пока нет данных</p>
+          ) : (
+            <div className="space-y-1.5">
+              {popular.map((item, i) => (
+                <div key={item.q} className="flex items-center gap-2">
+                  <span className="text-[11px] text-[#4b5563] w-5 text-right">{i + 1}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#84CC16]/60"
+                      style={{ width: `${Math.min(100, (item.count / (popular[0]?.count || 1)) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[13px] text-[#d1d5db] flex-1 truncate">{item.q}</span>
+                  <span className="text-[12px] text-[#6b7280] tabular-nums">{item.count}×</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </AdminCard>
+
+        {/* Gaps */}
+        <AdminCard>
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart2 className="w-4 h-4 text-amber-400" />
+            <h3 className="text-[14px] font-semibold text-white">Не нашли в каталоге</h3>
+            <span className="text-[11px] text-[#6b7280]">— возможные пробелы</span>
+          </div>
+          {gaps.length === 0 ? (
+            <p className="text-[13px] text-[#6b7280]">Пробелов не обнаружено</p>
+          ) : (
+            <div className="space-y-1.5">
+              {gaps.map((item, i) => (
+                <div key={item.q} className="flex items-center gap-2">
+                  <span className="text-[11px] text-[#4b5563] w-5 text-right">{i + 1}</span>
+                  <span className="text-[13px] text-amber-300 flex-1 truncate">{item.q}</span>
+                  <span className="text-[12px] text-[#6b7280] tabular-nums">{item.count}×</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {gaps.length > 0 && (
+            <p className="text-[11px] text-[#4b5563] mt-3">
+              Популярные поисковые фразы, которым не соответствует ни одна услуга в каталоге.
+              Добавьте услуги или синонимы.
+            </p>
+          )}
+        </AdminCard>
+      </div>
+
+      <div className="flex justify-end">
+        <button type="button" onClick={load}
+          className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-white/[0.08] text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors text-[12px]">
+          <RefreshCw className="w-3.5 h-3.5" />Обновить
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Markup calculator preview ─────────────────────────────────────────────────
 
 const KIND_LABELS = { display: 'Дисплей', battery: 'АКБ', port: 'Разъём' };
@@ -962,10 +1076,8 @@ function MarketReferenceTab() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RepairPricePage() {
-  const { draft, setDraft, save: saveCms, reset, saved } = useSiteDraft('repairPrice');
+  const { settings: draft, setSettings: setDraft, save: saveApi, reset, saving, saved, saveError } = useRepairSettings();
   const [tab, setTab] = useState('services');
-  const [saving, setSaving] = useState(false);
-  const [syncError, setSyncError] = useState('');
   const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
@@ -993,20 +1105,12 @@ export default function RepairPricePage() {
     });
   };
 
-  const handleSave = async () => {
-    setSaving(true); setSyncError('');
-    try {
-      const res = await fetch('/api/repair-price/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
-      if (!res.ok) throw new Error('sync failed');
-      saveCms();
-    } catch {
-      setSyncError('Не удалось записать на сервер. Запустите npm run dev и сохраните снова.');
-    } finally { setSaving(false); }
-  };
+  const handleSave = () => saveApi();
 
   const mainTabs = [
     { id: 'services', label: 'Услуги' },
     { id: 'suppliers', label: 'Поставщики' },
+    { id: 'analytics', label: 'Аналитика' },
     { id: 'brands', label: 'Бренды' },
     { id: 'markup', label: 'Накрутка' },
     { id: 'bands', label: 'Диапазоны' },
@@ -1016,6 +1120,16 @@ export default function RepairPricePage() {
   ];
 
   const isMarkupTab = ['brands', 'markup', 'bands', 'labor', 'general'].includes(tab);
+  const isStaticTab = ['services', 'suppliers', 'analytics'].includes(tab);
+
+  if (!draft) {
+    return (
+      <>
+        <PageHeader title="Прайс и услуги (/prise)" description="Загрузка настроек калькулятора..." />
+        <AdminCard><div className="h-40 animate-pulse bg-white/[0.03] rounded-xl" /></AdminCard>
+      </>
+    );
+  }
 
   return (
     <>
@@ -1024,7 +1138,7 @@ export default function RepairPricePage() {
         description="Каталог услуг для публичной страницы, управление поставщиками и настройки калькулятора цен по TagGSM."
       />
 
-      {tab === 'services' || tab === 'suppliers' ? null : <PricingPreview settings={draft} />}
+      {isStaticTab ? null : <PricingPreview settings={draft} />}
 
       <AdminTabs tabs={mainTabs} active={tab} onChange={setTab} />
 
@@ -1033,6 +1147,9 @@ export default function RepairPricePage() {
 
       {/* ── Поставщики ─────────────────────────────────────────────────────── */}
       {tab === 'suppliers' && <SuppliersTab />}
+
+      {/* ── Аналитика ──────────────────────────────────────────────────────── */}
+      {tab === 'analytics' && <AnalyticsTab />}
 
       {/* ── Бренды ─────────────────────────────────────────────────────────── */}
       {tab === 'brands' && (
@@ -1238,7 +1355,7 @@ export default function RepairPricePage() {
       {/* Save bar — only for markup tabs */}
       {isMarkupTab && (
         <AdminCard className="mt-6">
-          {syncError ? <p className="text-[13px] text-amber-400 mb-4">{syncError}</p> : null}
+          {saveError ? <p className="text-[13px] text-amber-400 mb-4">{saveError}</p> : null}
           <SaveBar onSave={handleSave} onReset={reset} saving={saving} saved={saved} />
         </AdminCard>
       )}

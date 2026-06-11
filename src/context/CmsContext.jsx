@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchSiteCms, saveSiteCms } from '../api/cmsApi';
+import { handleAdminApiError, hasAdminSession } from '../utils/adminSession';
 import {
   buildCmsData,
   CMS_UPDATED_EVENT,
@@ -9,8 +10,6 @@ import {
   resetCmsContent,
   saveCmsContent,
 } from '../data/cmsStore';
-
-const STORAGE_KEY = 'proshivka-cms-content';
 
 const CmsContext = createContext(null);
 
@@ -26,23 +25,23 @@ export function CmsProvider({ children }) {
       try {
         const data = await fetchSiteCms(controller.signal);
         if (data?.content) {
-          if (!data.persisted && typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) {
-            const local = loadCmsContent();
-            setContent(local);
-            setSource('migrated');
-            saveSiteCms(local).catch(() => {});
-            return;
-          }
           setContent(data.content);
-          setSource('server');
+          setSource(data.persisted ? 'server' : 'server-defaults');
+          saveCmsContent(data.content);
           return;
         }
       } catch {
         // fallback below
       }
 
-      setContent(loadCmsContent());
-      setSource('local');
+      if (hasAdminSession()) {
+        setContent(loadCmsContent());
+        setSource('local');
+        return;
+      }
+
+      setContent(getDefaultCmsContent());
+      setSource('default');
     })().finally(() => {
       if (!controller.signal.aborted) setReady(true);
     });
@@ -51,45 +50,67 @@ export function CmsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const sync = () => setContent(loadCmsContent());
+    const sync = () => {
+      if (hasAdminSession()) {
+        setContent(loadCmsContent());
+      }
+    };
     window.addEventListener(CMS_UPDATED_EVENT, sync);
     return () => window.removeEventListener(CMS_UPDATED_EVENT, sync);
   }, []);
 
   const cmsData = useMemo(() => buildCmsData(content), [content]);
 
-  const updateContent = useCallback((next) => {
+  const updateContent = useCallback(async (next) => {
     const updated = typeof next === 'function' ? next(content) : next;
     setContent(updated);
-    saveCmsContent(updated);
 
-    saveSiteCms(updated).catch(() => {
-      // локальная копия уже сохранена; сервер недоступен только в dev/offline
-    });
+    if (!hasAdminSession()) {
+      saveCmsContent(updated);
+      return { ok: false, skipped: true };
+    }
+
+    try {
+      await saveSiteCms(updated);
+      saveCmsContent(updated);
+      return { ok: true };
+    } catch (error) {
+      handleAdminApiError(error);
+      saveCmsContent(updated);
+      return { ok: false, error };
+    }
   }, [content]);
 
   const updatePage = useCallback(
-    (pageKey, next) => {
+    (pageKey, next) =>
       updateContent((prev) => {
         const pageUpdate = typeof next === 'function' ? next(prev[pageKey]) : next;
         return { ...prev, [pageKey]: pageUpdate };
-      });
-    },
+      }),
     [updateContent],
   );
 
-  const resetContent = useCallback(() => {
+  const resetContent = useCallback(async () => {
     const defaults = resetCmsContent();
     setContent(defaults);
-    saveSiteCms(defaults).catch(() => {});
-    return defaults;
+
+    if (!hasAdminSession()) {
+      return { ok: false, skipped: true };
+    }
+
+    try {
+      await saveSiteCms(defaults);
+      return { ok: true };
+    } catch (error) {
+      handleAdminApiError(error);
+      return { ok: false, error };
+    }
   }, []);
 
   const resetPage = useCallback(
     (pageKey) => {
       const defaults = getDefaultCmsContent();
-      updatePage(pageKey, defaults[pageKey]);
-      return defaults[pageKey];
+      return updatePage(pageKey, defaults[pageKey]);
     },
     [updatePage],
   );
