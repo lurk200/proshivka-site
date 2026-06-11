@@ -14,6 +14,7 @@ import { DesktopCta } from './components/StickyMobileCta';
 import PartQualityGuide from './components/PartQualityGuide';
 import BrandRepairGuide from './components/BrandRepairGuide';
 import ServiceCatalog from './components/ServiceCatalog';
+import ModelServiceCatalog from './components/ModelServiceCatalog';
 import { useRepairPriceSearch } from './hooks/useRepairPriceSearch';
 
 import { HOME_ABOUT } from '../data/homeAbout';
@@ -54,6 +55,12 @@ export default function RepairPricePage() {
   // Model selected in calculator — drives brand filter in catalog
   const [selectedModel, setSelectedModel] = useState('');
 
+  // When user selects a model — stay on calculator tab, show full catalog below supplier results
+  const handleSelectModel = (item) => {
+    search.selectModel(item);
+    setSelectedModel(item.label);
+  };
+
   const handleSubmit = () => {
     const trimmed = search.query.trim();
     if (!trimmed) return;
@@ -61,15 +68,8 @@ export default function RepairPricePage() {
     const exact = search.suggestions.find(
       (m) => m.label.toLowerCase() === normalized,
     );
-    if (exact) { search.selectModel(exact); return; }
+    if (exact) { handleSelectModel(exact); return; }
     search.loadPrice(trimmed);
-  };
-
-  // When user selects a model in the calculator, switch to catalog with model filter
-  const handleSelectModel = (item) => {
-    search.selectModel(item);
-    setSelectedModel(item.label);
-    setTab('catalog');
   };
 
   const handleClearModel = () => {
@@ -169,7 +169,15 @@ export default function RepairPricePage() {
                   ) : null}
                 </div>
 
-                {showCta ? (
+                {/* Full service catalog for selected model */}
+                {selectedModel && (
+                  <ModelServiceCatalog
+                    modelLabel={selectedModel}
+                    contacts={company?.contacts}
+                  />
+                )}
+
+                {(showCta || selectedModel) ? (
                   <div className="mt-10 hidden md:block">
                     <DesktopCta
                       phone={company.phone}
