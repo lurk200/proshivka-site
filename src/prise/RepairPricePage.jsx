@@ -20,8 +20,8 @@ import { useRepairPriceSearch } from './hooks/useRepairPriceSearch';
 import { HOME_ABOUT } from '../data/homeAbout';
 
 const TABS = [
-  { id: 'catalog', label: 'Каталог услуг', icon: List },
   { id: 'calculator', label: 'Рассчитать по модели', icon: Calculator },
+  { id: 'catalog', label: 'Каталог услуг', icon: List },
 ];
 
 function TabBar({ active, onChange }) {
@@ -51,7 +51,7 @@ export default function RepairPricePage() {
   const { company } = cmsData;
   const mapUrl = cmsData.mainHome?.about?.yandexMap?.orgUrl ?? HOME_ABOUT.yandexMap.orgUrl;
   const search = useRepairPriceSearch();
-  const [tab, setTab] = useState('catalog');
+  const [tab, setTab] = useState('calculator');
   // Model selected in calculator — drives brand filter in catalog
   const [selectedModel, setSelectedModel] = useState('');
 
