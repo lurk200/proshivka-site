@@ -2,6 +2,7 @@ import React from 'react';
 import PageTransition from '../components/layout/PageTransition';
 import HomeServiceBanners from '../components/sections/HomeServiceBanners';
 import HomeAboutSection from '../components/sections/HomeAboutSection';
+import PublishedReviewsSection from '../components/sections/PublishedReviewsSection';
 import { useCms } from '../context/CmsContext';
 
 export default function Home() {
@@ -25,6 +26,8 @@ export default function Home() {
           </section>
 
           <HomeAboutSection company={cmsData.company} />
+
+          <PublishedReviewsSection />
         </div>
       </div>
     </PageTransition>

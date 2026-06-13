@@ -199,6 +199,19 @@ export default function ReviewsPage() {
         }
       />
 
+      {/* Urgent alert */}
+      {stats?.urgent > 0 && (
+        <div className="flex items-start gap-3 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25">
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+          <div>
+            <p className="text-[13px] font-semibold text-red-300">
+              {stats.urgent} {stats.urgent === 1 ? 'отзыв' : 'отзыва'} с оценкой 1–2 звезды
+            </p>
+            <p className="text-[12px] text-red-400/70 mt-0.5">Требуется связаться с клиентом — перейдите во вкладку «Проблемные»</p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -214,14 +227,24 @@ export default function ReviewsPage() {
             </div>
           </AdminCard>
           <AdminCard>
-            <p className="text-[11px] text-[#6b7280] mb-2">Проблемных</p>
-            <p className="text-[28px] font-bold text-red-400 leading-none">{stats.problematic}</p>
+            <p className="text-[11px] text-[#6b7280] mb-1">Необработанных</p>
+            <p className="text-[28px] font-bold text-blue-400 leading-none">{stats.unprocessed ?? 0}</p>
           </AdminCard>
           <AdminCard>
-            <p className="text-[11px] text-[#6b7280] mb-2">Распределение</p>
-            <RatingBar distribution={stats.distribution} total={stats.total} />
+            <p className="text-[11px] text-[#6b7280] mb-2">Проблемных</p>
+            <p className={`text-[28px] font-bold leading-none ${stats.problematic > 0 ? 'text-red-400' : 'text-[#6b7280]'}`}>
+              {stats.problematic}
+            </p>
           </AdminCard>
         </div>
+      )}
+
+      {/* Rating distribution */}
+      {stats && stats.total > 0 && (
+        <AdminCard className="mb-6">
+          <p className="text-[11px] text-[#6b7280] mb-3">Распределение оценок</p>
+          <RatingBar distribution={stats.distribution} total={stats.total} />
+        </AdminCard>
       )}
 
       {/* Tab Bar */}

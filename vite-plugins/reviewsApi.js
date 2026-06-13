@@ -1,5 +1,7 @@
 import {
   listReviews,
+  listPublishedReviews,
+  getPublicStats,
   getReviewByOrderId,
   createReview,
   updateReview,
@@ -35,6 +37,19 @@ async function readBody(req) {
 
 function handleReviews(req, res, url) {
   const { pathname } = url;
+
+  // ── Public: published reviews list ───────────────────────────────────────
+  if (req.method === 'GET' && pathname === '/api/reviews/published') {
+    const rating = url.searchParams.get('rating');
+    const limit = url.searchParams.get('limit');
+    const reviews = listPublishedReviews({ rating: rating ? Number(rating) : undefined, limit: limit ? Number(limit) : undefined });
+    return json(res, 200, { reviews });
+  }
+
+  // ── Public: aggregate stats (published only) ──────────────────────────────
+  if (req.method === 'GET' && pathname === '/api/reviews/stats') {
+    return json(res, 200, getPublicStats());
+  }
 
   // ── Public: check if review exists ───────────────────────────────────────
   if (req.method === 'GET' && pathname === '/api/reviews/check') {

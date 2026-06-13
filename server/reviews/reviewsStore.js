@@ -35,6 +35,36 @@ export function getReviewByOrderId(orderId) {
   return readAll().find(r => r.orderId === orderId) ?? null;
 }
 
+/**
+ * Public: list only published reviews, optionally filtered by rating.
+ * @param {{ rating?: number, limit?: number }} [opts]
+ */
+export function listPublishedReviews({ rating, limit } = {}) {
+  let reviews = readAll().filter(r => r.status === 'published');
+  if (rating) reviews = reviews.filter(r => r.rating === Number(rating));
+  reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (limit) reviews = reviews.slice(0, Number(limit));
+  return reviews;
+}
+
+/** Public aggregate stats — only published reviews count. */
+export function getPublicStats() {
+  const published = readAll().filter(r => r.status === 'published');
+  const total = published.length;
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let sum = 0;
+  for (const r of published) {
+    const n = Math.max(1, Math.min(5, r.rating));
+    distribution[n] = (distribution[n] || 0) + 1;
+    sum += n;
+  }
+  return {
+    total,
+    average: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
+    distribution,
+  };
+}
+
 export function createReview({ orderId, orderNumber, device, clientName, clientPhone, masterName, rating, comment, issuedAt }) {
   const reviews = readAll();
   if (reviews.find(r => r.orderId === orderId)) {
@@ -52,6 +82,7 @@ export function createReview({ orderId, orderNumber, device, clientName, clientP
     rating: Math.max(1, Math.min(5, Number(rating))),
     comment: String(comment || '').trim(),
     status: 'new',
+    urgent: Math.max(1, Math.min(5, Number(rating))) <= 2,
     issuedAt: issuedAt || now,
     createdAt: now,
     updatedAt: now,
@@ -87,6 +118,8 @@ export function getReviewStats() {
     average: total > 0 ? Math.round((sum / total) * 10) / 10 : 0,
     distribution,
     problematic: reviews.filter(r => r.rating <= 3).length,
+    urgent: reviews.filter(r => r.urgent && r.status === 'new').length,
+    unprocessed: reviews.filter(r => r.status === 'new').length,
     recent: reviews
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5)

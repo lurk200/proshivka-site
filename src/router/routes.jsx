@@ -14,6 +14,7 @@ const WorkDetailPage = lazy(() => import('../pages/WorkDetailPage'));
 const RepairPricePage = lazy(() => import('../prise/RepairPricePage'));
 const SendRepairPage = lazy(() => import('../pages/SendRepairPage'));
 const OrderStatusPage = lazy(() => import('../pages/OrderStatusPage'));
+const ReviewsPublicPage = lazy(() => import('../pages/ReviewsPublicPage'));
 
 import { adminRoutes } from '../../Admin/routes';
 
@@ -46,6 +47,7 @@ export const routes = [
       { path: 'prise', element: withSuspense(<RepairPricePage />) },
       { path: 'otpravit-v-remont', element: withSuspense(<SendRepairPage />) },
       { path: 'status-zakaza', element: withSuspense(<OrderStatusPage />) },
+      { path: 'reviews', element: withSuspense(<ReviewsPublicPage />) },
     ]
   },
   ...adminRoutes,

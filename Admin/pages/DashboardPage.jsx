@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, Building2, Calculator, ClipboardList, Clock, FileText,
+  AlertTriangle, ArrowRight, Building2, Calculator, ClipboardList, Clock, FileText,
   FolderOpen, Globe, Image, Layers, Lightbulb, Megaphone, Navigation,
   Scale, Send, Sparkles, Terminal, Wrench, LayoutTemplate, RefreshCw,
   MapPin, TrendingUp, Package, Activity, BarChart2, Star,
@@ -213,33 +213,28 @@ export default function DashboardPage() {
       </AdminCard>
 
       {/* ── Reviews widget ───────────────────────────────────────── */}
+      {reviewStats?.urgent > 0 && (
+        <Link
+          to="/admin/reviews"
+          className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 hover:border-red-500/40 transition-colors"
+        >
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" strokeWidth={1.75} />
+          <p className="text-[13px] text-red-300 flex-1">
+            <span className="font-semibold">{reviewStats.urgent} {reviewStats.urgent === 1 ? 'отзыв' : 'отзыва'} с оценкой 1–2 звезды</span>
+            {' '}— требуется связаться с клиентом
+          </p>
+          <ArrowRight className="w-3.5 h-3.5 text-red-400 shrink-0" />
+        </Link>
+      )}
       <AdminCard className="mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0">
               <Star className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
             </div>
             <div>
               <p className="text-[14px] font-semibold text-white">Отзывы клиентов</p>
-              {reviewStats ? (
-                <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-[12px] text-[#9ca3af]">
-                    Всего: <span className="text-white font-medium">{reviewStats.total}</span>
-                  </span>
-                  {reviewStats.total > 0 && (
-                    <span className="text-[12px] text-[#9ca3af]">
-                      Средняя: <span className="text-amber-400 font-medium">{reviewStats.average} ★</span>
-                    </span>
-                  )}
-                  {reviewStats.problematic > 0 && (
-                    <span className="text-[12px] text-red-400 font-medium">
-                      {reviewStats.problematic} проблемных
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[12px] text-[#4b5563] mt-0.5">Загрузка…</p>
-              )}
+              <p className="text-[12px] text-[#4b5563] mt-0.5">Отображаются только опубликованные</p>
             </div>
           </div>
           <Link
@@ -249,6 +244,30 @@ export default function DashboardPage() {
             Открыть <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
+        {reviewStats ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <div className="bg-white/[0.03] rounded-xl px-3 py-2.5">
+              <p className="text-[20px] font-bold text-white leading-none">{reviewStats.total}</p>
+              <p className="text-[10px] text-[#6b7280] mt-0.5">Всего</p>
+            </div>
+            <div className="bg-white/[0.03] rounded-xl px-3 py-2.5">
+              <p className="text-[20px] font-bold text-amber-400 leading-none">{reviewStats.average || '—'}</p>
+              <p className="text-[10px] text-[#6b7280] mt-0.5">Средняя оценка</p>
+            </div>
+            <div className="bg-white/[0.03] rounded-xl px-3 py-2.5">
+              <p className="text-[20px] font-bold text-blue-400 leading-none">{reviewStats.unprocessed ?? 0}</p>
+              <p className="text-[10px] text-[#6b7280] mt-0.5">Необработанные</p>
+            </div>
+            <div className="bg-white/[0.03] rounded-xl px-3 py-2.5">
+              <p className={`text-[20px] font-bold leading-none ${reviewStats.problematic > 0 ? 'text-red-400' : 'text-[#6b7280]'}`}>
+                {reviewStats.problematic}
+              </p>
+              <p className="text-[10px] text-[#6b7280] mt-0.5">Проблемных</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-[12px] text-[#4b5563] mt-3">Загрузка…</p>
+        )}
       </AdminCard>
 
       {/* ── Secondary Stats ───────────────────────────────────────── */}
