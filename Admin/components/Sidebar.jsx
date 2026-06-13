@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Sparkles, Wrench, FolderOpen, Lightbulb,
   LogOut, ExternalLink, Megaphone, Terminal, Image, MapPin, Layers, Scale,
   FileText, Navigation, LayoutTemplate, Globe, Calculator, ClipboardList,
-  Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2, QrCode,
+  Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2, QrCode, Star,
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
@@ -37,6 +37,7 @@ const SOFTWARE_NAV = [
 const SITE_NAV = [
   { to: '/admin/send-repair', label: 'Отправить в ремонт', icon: Send },
   { to: '/admin/orders', label: 'Заказы', icon: ClipboardList },
+  { to: '/admin/reviews', label: 'Отзывы', icon: Star },
   { to: '/admin/repair-price', label: 'Калькулятор цен', icon: Calculator },
   { to: '/admin/works', label: 'Наши работы', icon: Layers },
   { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText },

@@ -27,6 +27,7 @@ import NotificationsSettingsPage from './pages/settings/NotificationsSettingsPag
 import CompanySettingsPage from './pages/settings/CompanySettingsPage';
 import DocumentSettingsPage from './pages/settings/DocumentSettingsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import ReviewsPage from './pages/ReviewsPage';
 
 const softwareRepairEditors = [
   { path: 'hero', element: <HeroPage /> },
@@ -74,8 +75,8 @@ export const adminRoutes = [
           { path: 'analytics', element: <AnalyticsPage /> },
           { path: 'main/works', element: <Navigate to="/admin/works" replace /> },
           { path: 'main/seo', element: <Navigate to="/admin/seo" replace /> },
-          { path: 'software-repair/reviews', element: <Navigate to="/admin/software-repair/hero" replace /> },
-          { path: 'reviews', element: <Navigate to="/admin/software-repair/hero" replace /> },
+          { path: 'software-repair/reviews', element: <Navigate to="/admin/reviews" replace /> },
+          { path: 'reviews', element: <ReviewsPage /> },
           ...legacyRedirects,
           {
             path: 'software-repair',

@@ -216,7 +216,13 @@ export function trackOrder(orderNumber) {
   if (!order) return null;
   const publicOrder = toPublicOrder(order);
   const companySettings = readSettings('company');
-  return { ...publicOrder, reviewUrl: companySettings.reviewUrl || '' };
+  return {
+    ...publicOrder,
+    reviewUrl: companySettings.reviewUrl || '',
+    // Expose id + issuedAt for review form (only meaningful when completed)
+    id: order.id,
+    issuedAt: order.issuedAt ?? null,
+  };
 }
 
 // ─── Create ──────────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import { ordersApiPlugin } from './vite-plugins/ordersApi.js'
 import { cmsApiPlugin } from './vite-plugins/cmsApi.js'
 import { analyticsApiPlugin } from './vite-plugins/analyticsApi.js'
 import { settingsApiPlugin } from './vite-plugins/settingsApi.js'
+import { reviewsApiPlugin } from './vite-plugins/reviewsApi.js'
 
 export default defineConfig({
   plugins: [
@@ -16,6 +17,7 @@ export default defineConfig({
     cmsApiPlugin(),
     analyticsApiPlugin(),
     settingsApiPlugin(),
+    reviewsApiPlugin(),
   ],
   server: {
     host: '127.0.0.1',

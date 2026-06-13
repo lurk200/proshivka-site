@@ -13,6 +13,9 @@ import {
   Bell,
   ChevronDown,
   Check,
+  Star,
+  Send,
+  ThumbsUp,
 } from 'lucide-react';
 import PageTransition from '../components/layout/PageTransition';
 import { Reveal } from '../components/ui';
@@ -240,9 +243,162 @@ function FullTimeline({ timeline }) {
   );
 }
 
+// ─── Review block ─────────────────────────────────────────────────────────────
+
+function StarPicker({ value, onChange, disabled }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(0)}
+          className="p-0.5 transition-transform hover:scale-110 disabled:cursor-default"
+        >
+          <Star
+            className={`w-7 h-7 transition-colors ${
+              n <= (hovered || value)
+                ? 'text-amber-400 fill-amber-400'
+                : 'text-[var(--border-medium)]'
+            }`}
+            strokeWidth={1.5}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ReviewBlock({ orderId, issuedAt, reviewUrl }) {
+  const [existing, setExisting] = useState(null);
+  const [checked, setChecked] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  // Check if 7-day window still open
+  const withinWindow = !issuedAt || (Date.now() - new Date(issuedAt).getTime()) < 7 * 24 * 60 * 60 * 1000;
+
+  useEffect(() => {
+    if (!orderId) return;
+    fetch(`/api/reviews/check?orderId=${encodeURIComponent(orderId)}`)
+      .then(r => r.json())
+      .then(d => {
+        setExisting(d.review ?? null);
+        if (d.review) {
+          setRating(d.review.rating);
+          setComment(d.review.comment || '');
+          setSubmitted(true);
+        }
+        setChecked(true);
+      })
+      .catch(() => setChecked(true));
+  }, [orderId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) { setError('Пожалуйста, выберите оценку'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, rating, comment }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Ошибка отправки'); return; }
+      setExisting(data.review);
+      setSubmitted(true);
+    } catch {
+      setError('Ошибка соединения');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!checked) return null;
+  if (!withinWindow && !submitted) return null;
+
+  // Submitted state
+  if (submitted && existing) {
+    const isPositive = existing.rating >= 4;
+    return (
+      <div className={`rounded-xl border p-4 ${isPositive ? 'border-[#84CC16]/20 bg-[#84CC16]/5' : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)]'}`}>
+        <div className="flex items-start gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPositive ? 'bg-[#84CC16]/10' : 'bg-[var(--bg-surface)]'}`}>
+            <ThumbsUp className={`w-4 h-4 ${isPositive ? 'text-[#84CC16]' : 'text-[var(--text-muted)]'}`} strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">Спасибо за отзыв!</p>
+            <div className="flex gap-0.5 mb-1.5">
+              {[1,2,3,4,5].map(n => (
+                <Star key={n} className={`w-4 h-4 ${n <= existing.rating ? 'text-amber-400 fill-amber-400' : 'text-[var(--border-medium)]'}`} strokeWidth={1.5} />
+              ))}
+            </div>
+            {existing.comment && (
+              <p className="text-[13px] text-[var(--text-secondary)] mb-2">«{existing.comment}»</p>
+            )}
+            {isPositive && reviewUrl && (
+              <a
+                href={reviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] text-[#84CC16] hover:underline font-medium"
+              >
+                <Star className="w-3.5 h-3.5 fill-[#84CC16]" strokeWidth={1.5} />
+                Оставить отзыв на Яндекс.Картах
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Form
+  return (
+    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+      <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
+        <Star className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
+        Оцените ремонт
+      </p>
+      <p className="text-[12px] text-[var(--text-muted)] mb-3">
+        Ваше мнение помогает нам становиться лучше
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <StarPicker value={rating} onChange={setRating} disabled={submitting} />
+        <textarea
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          placeholder="Расскажите о своём опыте (необязательно)"
+          rows={3}
+          disabled={submitting}
+          className="w-full rounded-xl border border-[var(--border-medium)] bg-[var(--bg-surface)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[#84CC16]/50 focus:ring-2 focus:ring-[#84CC16]/20 resize-none disabled:opacity-60"
+        />
+        {error && <p className="text-[12px] text-red-400">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting || rating === 0}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#84CC16] text-[#0A0A0C] text-[13px] font-semibold hover:bg-[#9BE02A] transition-colors disabled:opacity-50 disabled:cursor-default"
+        >
+          {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          {submitting ? 'Отправка…' : 'Отправить отзыв'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // ─── Order result ─────────────────────────────────────────────────────────────
 
-function OrderResult({ order, company, lastUpdated, onRefresh, refreshing }) {
+function OrderResult({ order, company, lastUpdated, onRefresh, refreshing, reviewUrl }) {
   const tone = TONE_STYLES[order.statusTone] ?? TONE_STYLES.muted;
   const price = formatRub(order.cost);
   const warranty = order.documents?.warranty;
@@ -341,6 +497,15 @@ function OrderResult({ order, company, lastUpdated, onRefresh, refreshing }) {
 
       {order.status === 'completed' && !order.documents?.act && (
         <p className="text-[12px] text-center text-[var(--text-muted)]">Документы готовятся…</p>
+      )}
+
+      {/* Review block — shown only for issued (completed) orders */}
+      {order.status === 'completed' && order.id && (
+        <ReviewBlock
+          orderId={order.id}
+          issuedAt={order.issuedAt}
+          reviewUrl={reviewUrl}
+        />
       )}
     </div>
   );
@@ -453,6 +618,7 @@ export default function OrderStatusPage() {
                   lastUpdated={lastUpdated}
                   onRefresh={reload}
                   refreshing={loading}
+                  reviewUrl={cmsData.company?.reviewUrl}
                 />
               </div>
             </Reveal>

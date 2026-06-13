@@ -4,7 +4,7 @@ import {
   ArrowRight, Building2, Calculator, ClipboardList, Clock, FileText,
   FolderOpen, Globe, Image, Layers, Lightbulb, Megaphone, Navigation,
   Scale, Send, Sparkles, Terminal, Wrench, LayoutTemplate, RefreshCw,
-  MapPin, TrendingUp, Package, Activity, BarChart2,
+  MapPin, TrendingUp, Package, Activity, BarChart2, Star,
 } from 'lucide-react';
 import { useCms } from '../../src/context/CmsContext';
 import { PAGE_KEYS } from '../../src/data/cmsStore';
@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [history, setHistory] = useState([]);
   const [analyticsSnap, setAnalyticsSnap] = useState(null);
+  const [reviewStats, setReviewStats] = useState(null);
 
   const softwarePage = content[PAGE_KEYS.SOFTWARE_REPAIR] ?? {};
   const servicesCount = softwarePage.services?.featured?.length ?? 0;
@@ -111,6 +112,10 @@ export default function DashboardPage() {
     fetch('/api/admin/analytics', { headers: adminHeaders() })
       .then(r => r.json())
       .then(d => setAnalyticsSnap(d))
+      .catch(() => {});
+    fetch('/api/admin/reviews/stats', { headers: adminHeaders() })
+      .then(r => r.json())
+      .then(d => setReviewStats(d))
       .catch(() => {});
   }, []);
 
@@ -200,6 +205,45 @@ export default function DashboardPage() {
           </div>
           <Link
             to="/admin/analytics"
+            className="flex items-center gap-1.5 text-[12px] text-[#84CC16] hover:underline shrink-0"
+          >
+            Открыть <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </AdminCard>
+
+      {/* ── Reviews widget ───────────────────────────────────────── */}
+      <AdminCard className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0">
+              <Star className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-white">Отзывы клиентов</p>
+              {reviewStats ? (
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-[12px] text-[#9ca3af]">
+                    Всего: <span className="text-white font-medium">{reviewStats.total}</span>
+                  </span>
+                  {reviewStats.total > 0 && (
+                    <span className="text-[12px] text-[#9ca3af]">
+                      Средняя: <span className="text-amber-400 font-medium">{reviewStats.average} ★</span>
+                    </span>
+                  )}
+                  {reviewStats.problematic > 0 && (
+                    <span className="text-[12px] text-red-400 font-medium">
+                      {reviewStats.problematic} проблемных
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#4b5563] mt-0.5">Загрузка…</p>
+              )}
+            </div>
+          </div>
+          <Link
+            to="/admin/reviews"
             className="flex items-center gap-1.5 text-[12px] text-[#84CC16] hover:underline shrink-0"
           >
             Открыть <ArrowRight className="w-3 h-3" />
