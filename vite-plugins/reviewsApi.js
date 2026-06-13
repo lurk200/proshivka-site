@@ -9,9 +9,8 @@ import {
 } from '../server/reviews/reviewsStore.js';
 import { findOrderById } from '../server/orders/ordersStore.js';
 
-function isAdminRequest(req, url) {
-  const pwd = process.env.VITE_ADMIN_PASSWORD || 'proshivka';
-  return req.headers['x-admin-password'] === pwd || url.searchParams.get('adminPassword') === pwd;
+function isAdminRequest(req) {
+  return req.headers['x-admin-password'] === (process.env.VITE_ADMIN_PASSWORD || 'proshivka');
 }
 
 function json(res, status, data) {
@@ -115,7 +114,7 @@ function handleReviews(req, res, url) {
 
   // ── Admin: list reviews ──────────────────────────────────────────────────
   if (req.method === 'GET' && pathname === '/api/admin/reviews') {
-    if (!isAdminRequest(req, url)) return json(res, 401, { error: 'Unauthorized' });
+    if (!isAdminRequest(req)) return json(res, 401, { error: 'Unauthorized' });
     const tab = url.searchParams.get('tab') || 'all';
     const filters = {};
     if (tab === 'problematic') filters.problematic = true;
@@ -127,14 +126,14 @@ function handleReviews(req, res, url) {
 
   // ── Admin: stats ─────────────────────────────────────────────────────────
   if (req.method === 'GET' && pathname === '/api/admin/reviews/stats') {
-    if (!isAdminRequest(req, url)) return json(res, 401, { error: 'Unauthorized' });
+    if (!isAdminRequest(req)) return json(res, 401, { error: 'Unauthorized' });
     return json(res, 200, getReviewStats());
   }
 
   // ── Admin: update review status ──────────────────────────────────────────
   const adminUpdateMatch = pathname.match(/^\/api\/admin\/reviews\/([^/]+)$/);
   if (req.method === 'PUT' && adminUpdateMatch) {
-    if (!isAdminRequest(req, url)) return json(res, 401, { error: 'Unauthorized' });
+    if (!isAdminRequest(req)) return json(res, 401, { error: 'Unauthorized' });
     const id = adminUpdateMatch[1];
     readBody(req).then(body => {
       const updated = updateReview(id, body);

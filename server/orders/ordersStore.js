@@ -11,7 +11,7 @@ import {
   defaultWorkPerformed,
   parseWarrantyDays,
 } from './orderDocuments.js';
-import { defaultPrintFields, mergePrintFields, pickPrintFields } from './orderPrintFields.js';
+import { defaultPrintFields, mergePrintFields, pickPrintFields, pickPublicPrintFields } from './orderPrintFields.js';
 import { readSettings } from '../settings/settingsStore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -175,8 +175,8 @@ export function toPublicOrder(order) {
       device: order.device,
       cost: order.cost ?? computeOrderTotal(order),
       publicComment: order.publicComment?.trim() || '',
-      internalNote: order.internalNote?.trim() || '',
-      ...pickPrintFields(order),
+      // Strip internal fields: internalNote, clientPhone stay in CRM only
+      ...pickPublicPrintFields(order),
     },
     act: null,
     warranty: null,
@@ -196,7 +196,7 @@ export function toPublicOrder(order) {
       cost: order.cost ?? computeOrderTotal(order),
       orderNumber: order.orderNumber,
       createdAt: order.createdAt,
-      ...pickPrintFields(order),
+      ...pickPublicPrintFields(order),
     };
   }
 

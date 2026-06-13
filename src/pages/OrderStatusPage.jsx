@@ -398,7 +398,7 @@ function ReviewBlock({ orderId, issuedAt, reviewUrl }) {
 
 // ─── Order result ─────────────────────────────────────────────────────────────
 
-function OrderResult({ order, company, lastUpdated, onRefresh, refreshing, reviewUrl }) {
+function OrderResult({ order, company, lastUpdated, onRefresh, refreshing }) {
   const tone = TONE_STYLES[order.statusTone] ?? TONE_STYLES.muted;
   const price = formatRub(order.cost);
   const warranty = order.documents?.warranty;
@@ -504,7 +504,7 @@ function OrderResult({ order, company, lastUpdated, onRefresh, refreshing, revie
         <ReviewBlock
           orderId={order.id}
           issuedAt={order.issuedAt}
-          reviewUrl={reviewUrl}
+          reviewUrl={order.reviewUrl}
         />
       )}
     </div>
@@ -618,7 +618,6 @@ export default function OrderStatusPage() {
                   lastUpdated={lastUpdated}
                   onRefresh={reload}
                   refreshing={loading}
-                  reviewUrl={cmsData.company?.reviewUrl}
                 />
               </div>
             </Reveal>

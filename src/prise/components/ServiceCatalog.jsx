@@ -6,6 +6,7 @@ import {
 import { fetchServices, fetchPopularSearches } from '../api/repairPriceApi';
 import { getSessionId, trackServiceCta } from '../../hooks/useAnalytics';
 import { withWhatsappText } from '../../utils/contactActions';
+import { brandFromModel } from '../utils/brandFromModel';
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -60,23 +61,6 @@ const DEFAULT_POPULAR_CHIPS = [
   'Камера', 'Диагностика', 'Корпус', 'Чистка',
 ];
 
-// Detect brand from model label string
-function brandFromModel(label) {
-  if (!label) return '';
-  const l = label.toLowerCase();
-  if (/iphone|ipad|macbook|ipod|apple/.test(l)) return 'Apple';
-  if (/samsung|galaxy/.test(l)) return 'Samsung';
-  if (/xiaomi|redmi|poco/.test(l)) return 'Xiaomi';
-  if (/huawei/.test(l)) return 'Huawei';
-  if (/honor/.test(l)) return 'Honor';
-  if (/oppo/.test(l)) return 'OPPO';
-  if (/realme/.test(l)) return 'Realme';
-  if (/vivo/.test(l)) return 'Vivo';
-  if (/oneplus/.test(l)) return 'OnePlus';
-  if (/nokia/.test(l)) return 'Nokia';
-  if (/motorola|moto /.test(l)) return 'Motorola';
-  return '';
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

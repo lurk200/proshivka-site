@@ -36,11 +36,8 @@ function getAdminPassword() {
   return process.env.VITE_ADMIN_PASSWORD || 'proshivka';
 }
 
-function isAdminRequest(req, url) {
-  const header = req.headers['x-admin-password'];
-  const query = url.searchParams.get('adminPassword');
-  const pwd = getAdminPassword();
-  return header === pwd || query === pwd;
+function isAdminRequest(req) {
+  return req.headers['x-admin-password'] === getAdminPassword();
 }
 
 // ─── Status → notification event type map ─────────────────────────────────────
@@ -74,16 +71,23 @@ function buildAnalytics(orders) {
   const thisWeek = orders.filter(o => new Date(o.createdAt) >= weekAgo);
   const thisMonth = orders.filter(o => new Date(o.createdAt) >= monthAgo);
 
-  const revenueWeek = thisWeek
-    .filter(o => o.status === 'completed' && o.cost)
-    .reduce((s, o) => s + Number(o.cost), 0);
-  const revenueMonth = thisMonth
-    .filter(o => o.status === 'completed' && o.cost)
-    .reduce((s, o) => s + Number(o.cost), 0);
+  const effectiveCost = (o) => {
+    const direct = Number(o.cost);
+    if (direct > 0) return direct;
+    const sum = (Number(o.diagCost) || 0) + (Number(o.repairCost) || 0) + (Number(o.partsCost) || 0) - (Number(o.discount) || 0);
+    return sum > 0 ? sum : 0;
+  };
 
-  const costsCompleted = completed.filter(o => o.cost > 0);
+  const revenueWeek = thisWeek
+    .filter(o => o.status === 'completed')
+    .reduce((s, o) => s + effectiveCost(o), 0);
+  const revenueMonth = thisMonth
+    .filter(o => o.status === 'completed')
+    .reduce((s, o) => s + effectiveCost(o), 0);
+
+  const costsCompleted = completed.filter(o => effectiveCost(o) > 0);
   const avgCheck = costsCompleted.length
-    ? Math.round(costsCompleted.reduce((s, o) => s + Number(o.cost), 0) / costsCompleted.length)
+    ? Math.round(costsCompleted.reduce((s, o) => s + effectiveCost(o), 0) / costsCompleted.length)
     : 0;
 
   // Average completion time in hours
@@ -160,7 +164,7 @@ function registerOrdersApi(server) {
 
     // ── Admin: analytics ──
     if (url.pathname === '/api/orders/analytics') {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       if (req.method !== 'GET') { res.statusCode = 405; return res.end(); }
@@ -169,7 +173,7 @@ function registerOrdersApi(server) {
 
     // ── Admin: notification delivery status ──
     if (url.pathname === '/api/admin/notifications/delivery-status') {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       if (req.method !== 'GET') { res.statusCode = 405; return res.end(); }
@@ -180,7 +184,7 @@ function registerOrdersApi(server) {
 
     // ── Admin: notifications templates ──
     if (url.pathname === '/api/admin/notifications/templates') {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       if (req.method === 'GET') {
@@ -191,7 +195,7 @@ function registerOrdersApi(server) {
 
     const tplMatch = url.pathname.match(/^\/api\/admin\/notifications\/templates\/([^/]+)$/);
     if (tplMatch) {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       const tplId = decodeURIComponent(tplMatch[1]);
@@ -211,7 +215,7 @@ function registerOrdersApi(server) {
 
     // ── Admin: notification events log ──
     if (url.pathname === '/api/admin/notifications/log') {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       if (req.method === 'GET') {
@@ -223,7 +227,7 @@ function registerOrdersApi(server) {
 
     const orderEventsMatch = url.pathname.match(/^\/api\/admin\/notifications\/order\/([^/]+)$/);
     if (orderEventsMatch) {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       if (req.method === 'GET') {
@@ -235,7 +239,7 @@ function registerOrdersApi(server) {
 
     // ── Admin: orders list + create ──
     if (url.pathname === '/api/orders') {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       try {
@@ -262,7 +266,7 @@ function registerOrdersApi(server) {
     // ── Admin: single order ──
     const itemMatch = url.pathname.match(/^\/api\/orders\/([^/]+)$/);
     if (itemMatch) {
-      if (!isAdminRequest(req, url)) {
+      if (!isAdminRequest(req)) {
         return sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
       }
       const id = decodeURIComponent(itemMatch[1]);

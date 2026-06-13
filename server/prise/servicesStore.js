@@ -25,7 +25,7 @@ function writeJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
-const NOW = '2026-06-11T09:00:00.000Z';
+const NOW = new Date().toISOString();
 
 // ── Default labor costs by part type ─────────────────────────────────────────
 

@@ -11,6 +11,19 @@ const PRINT_KEYS = [
   'serialNumber',
 ];
 
+// Fields safe to expose publicly (exclude clientPhone and internal notes)
+const PUBLIC_PRINT_KEYS = [
+  'reason',
+  'appearance',
+  'kit',
+  'prepayment',
+  'recommendations',
+  'estimatedReadyAt',
+  'managerName',
+  'masterName',
+  'serialNumber',
+];
+
 export function defaultPrintFields() {
   return {
     clientPhone: '',
@@ -47,4 +60,17 @@ export function pickPrintFields(order) {
     }
   }
   return base;
+}
+
+/** Public-safe print fields — no clientPhone, no internal notes. */
+export function pickPublicPrintFields(order) {
+  const result = {};
+  for (const key of PUBLIC_PRINT_KEYS) {
+    if (order[key] !== undefined && order[key] !== null) {
+      result[key] = key === 'prepayment' ? Number(order.prepayment) || 0 : String(order[key]).trim();
+    } else {
+      result[key] = key === 'prepayment' ? 0 : '';
+    }
+  }
+  return result;
 }

@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, HelpCircle, Package, Zap } from 'lucide-react';
 import { fetchServices } from '../api/repairPriceApi';
 import { withWhatsappText } from '../../utils/contactActions';
 import { trackServiceCta } from '../../hooks/useAnalytics';
+import { brandFromModel, deviceTypeFromModel } from '../utils/brandFromModel';
 
 // Same groups as ServiceCatalog — must stay in sync
 const PART_GROUPS = [
@@ -17,30 +18,6 @@ const PART_GROUPS = [
   { key: 'other',     label: 'Прочее',           types: new Set(['keyboard', 'water', 'diagnostic', 'other']) },
 ];
 
-function brandFromModel(label) {
-  if (!label) return '';
-  const l = label.toLowerCase();
-  if (/iphone|ipad|macbook|ipod|apple/.test(l)) return 'Apple';
-  if (/samsung|galaxy/.test(l)) return 'Samsung';
-  if (/xiaomi|redmi|poco/.test(l)) return 'Xiaomi';
-  if (/huawei/.test(l)) return 'Huawei';
-  if (/honor/.test(l)) return 'Honor';
-  if (/oppo/.test(l)) return 'OPPO';
-  if (/realme/.test(l)) return 'Realme';
-  if (/vivo/.test(l)) return 'Vivo';
-  if (/oneplus/.test(l)) return 'OnePlus';
-  if (/nokia/.test(l)) return 'Nokia';
-  if (/motorola|moto /.test(l)) return 'Motorola';
-  return '';
-}
-
-function deviceTypeFromModel(label) {
-  if (!label) return 'smartphone';
-  const l = label.toLowerCase();
-  if (/ipad|galaxy\s*tab|lenovo\s*tab|xiaomi\s*pad|redmi\s*pad/.test(l)) return 'tablet';
-  if (/macbook|thinkpad|ноутбук/.test(l)) return 'laptop';
-  return 'smartphone';
-}
 
 function formatPrice(svc) {
   if (svc.clientPrice != null) return `${Number(svc.clientPrice).toLocaleString('ru')} ₽`;

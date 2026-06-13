@@ -15,9 +15,8 @@ function readBody(req) {
   });
 }
 
-function isAdmin(req, url) {
-  const pwd = process.env.VITE_ADMIN_PASSWORD || 'proshivka';
-  return req.headers['x-admin-password'] === pwd || url.searchParams.get('adminPassword') === pwd;
+function isAdmin(req) {
+  return req.headers['x-admin-password'] === (process.env.VITE_ADMIN_PASSWORD || 'proshivka');
 }
 
 const ALLOWED_KEYS = new Set(['company', 'documents']);
@@ -31,7 +30,7 @@ export function settingsApiPlugin() {
 
       const key = m[1];
       if (!ALLOWED_KEYS.has(key)) return sendJson(res, 404, { error: 'NOT_FOUND' });
-      if (!isAdmin(req, url)) return sendJson(res, 401, { error: 'UNAUTHORIZED' });
+      if (!isAdmin(req)) return sendJson(res, 401, { error: 'UNAUTHORIZED' });
 
       if (req.method === 'GET') {
         return sendJson(res, 200, readSettings(key));

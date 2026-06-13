@@ -59,6 +59,18 @@ function readBody(req) {
   });
 }
 
+function isAdminRequest(req) {
+  return req.headers['x-admin-password'] === (process.env.VITE_ADMIN_PASSWORD || 'proshivka');
+}
+
+function requireAdmin(req, res) {
+  if (!isAdminRequest(req)) {
+    sendJson(res, 401, { error: 'Требуется авторизация', code: 'UNAUTHORIZED' });
+    return false;
+  }
+  return true;
+}
+
 function idFromPath(pathname, prefix) {
   // e.g. /api/admin/services/svc_abc123 → svc_abc123
   return pathname.slice(prefix.length) || null;
@@ -74,6 +86,7 @@ function registerRepairPriceApi(server) {
           try {
             if (req.method === 'GET') return sendJson(res, 200, getRepairPriceSettings());
             if (req.method === 'PUT' || req.method === 'POST') {
+              if (!requireAdmin(req, res)) return;
               const raw = await readBody(req);
               const saved = saveRepairSettings(raw ? JSON.parse(raw) : {});
               return sendJson(res, 200, saved);
@@ -174,6 +187,7 @@ function registerRepairPriceApi(server) {
 
         // ── Admin services CRUD ────────────────────────────────────────────
         if (pathname === '/api/admin/services') {
+          if (!requireAdmin(req, res)) return;
           try {
             if (req.method === 'GET') {
               const category = url.searchParams.get('category') || undefined;
@@ -200,6 +214,7 @@ function registerRepairPriceApi(server) {
 
         // ── Admin search analytics ─────────────────────────────────────────
         if (pathname === '/api/admin/search-analytics') {
+          if (!requireAdmin(req, res)) return;
           try {
             const services = listServices({ archived: undefined });
             const popular = getPopular(20);
@@ -214,6 +229,7 @@ function registerRepairPriceApi(server) {
         }
 
         if (pathname === '/api/admin/services/mark-checked') {
+          if (!requireAdmin(req, res)) return;
           if (req.method === 'POST') {
             try {
               const raw = await readBody(req);
@@ -227,6 +243,7 @@ function registerRepairPriceApi(server) {
         }
 
         if (pathname === '/api/admin/services/bulk') {
+          if (!requireAdmin(req, res)) return;
           if (req.method === 'POST') {
             try {
               const raw = await readBody(req);
@@ -244,6 +261,7 @@ function registerRepairPriceApi(server) {
         }
 
         if (pathname === '/api/admin/services/export-csv') {
+          if (!requireAdmin(req, res)) return;
           if (req.method === 'GET') {
             try {
               const idsParam = url.searchParams.get('ids');
@@ -260,6 +278,7 @@ function registerRepairPriceApi(server) {
         }
 
         if (pathname.startsWith('/api/admin/services/')) {
+          if (!requireAdmin(req, res)) return;
           const id = idFromPath(pathname, '/api/admin/services/');
           if (!id) { next(); return; }
           try {
@@ -287,6 +306,7 @@ function registerRepairPriceApi(server) {
 
         // ── Admin suppliers CRUD ───────────────────────────────────────────
         if (pathname === '/api/admin/suppliers') {
+          if (!requireAdmin(req, res)) return;
           try {
             if (req.method === 'GET') {
               return sendJson(res, 200, { items: listSuppliers() });
@@ -303,6 +323,7 @@ function registerRepairPriceApi(server) {
         }
 
         if (pathname.startsWith('/api/admin/suppliers/')) {
+          if (!requireAdmin(req, res)) return;
           const id = idFromPath(pathname, '/api/admin/suppliers/');
           if (!id) { next(); return; }
           try {
