@@ -97,6 +97,7 @@ function migrateService(s) {
     partCost: s.partCost ?? null,
     purchasePrice: s.purchasePrice ?? null,
     lastChecked: s.lastChecked ?? s.updatedAt ?? NOW,
+    inStockStavropol: s.inStockStavropol ?? null,
     ...s,
   };
 }
@@ -476,6 +477,7 @@ export function createService(data) {
     expressMultiplier: data.expressMultiplier ?? 1.5,
     popularity: data.popularity ?? 50,
     supplierId: data.supplierId || null,
+    inStockStavropol: data.inStockStavropol ?? null,
     available: data.available !== false,
     archived: false,
     lastChecked: now,

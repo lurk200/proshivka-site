@@ -16,7 +16,7 @@ export function useRepairPriceSearch() {
   const [resultError, setResultError] = useState(null);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const debouncedQuery = useDebounce(query, 280);
+  const debouncedQuery = useDebounce(query, 200);
   const abortRef = useRef(null);
 
   const cancelInFlight = useCallback(() => {

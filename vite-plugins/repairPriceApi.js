@@ -110,10 +110,12 @@ function registerRepairPriceApi(server) {
         if (pathname === '/api/repair-price') {
           const model = readQueryParam(url, 'model', 'q');
           const label = url.searchParams.get('label')?.trim() ?? '';
+          const sid = url.searchParams.get('sessionId') || null;
           if (!model) return sendJson(res, 400, { error: 'Укажите модель устройства', code: 'MISSING_MODEL' });
           try {
             const payload = await getRepairQuote(model, label);
             if (!payload) return sendJson(res, 404, { error: 'Запчасть не найдена в наличии в Ставрополе', code: 'NOT_IN_STOCK' });
+            try { logSearch(label || model, sid); } catch {}
             return sendJson(res, 200, payload);
           } catch {
             return sendJson(res, 503, { error: 'Не удалось проверить наличие. Попробуйте позже.', code: 'SERVICE_UNAVAILABLE' });
@@ -157,6 +159,8 @@ function registerRepairPriceApi(server) {
 
             // Enrich with computed price + availability, strip internal fields
             const catSettings = getRepairPriceSettings().categorySettings ?? {};
+            const suppliers = listSuppliers();
+            const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s]));
             const publicItems = items.map((item) => {
               const { partCost, purchasePrice, laborCost, lastChecked, history, ...pub } = item;
               const clientPrice = purchasePrice != null && purchasePrice > 0
@@ -166,7 +170,14 @@ function registerRepairPriceApi(server) {
               const availability = purchasePrice != null && purchasePrice > 0
                 ? (freshness === 'fresh' ? 'in_stock' : 'order')
                 : 'enquire';
-              return { ...pub, clientPrice, availability };
+              // Explicit override → use it; null → derive from supplier city
+              const sup = item.supplierId ? supplierMap[item.supplierId] : null;
+              let inStockStavropol = item.inStockStavropol;
+              if (inStockStavropol === null || inStockStavropol === undefined) {
+                inStockStavropol = !!(sup?.city && /ставрополь/i.test(sup.city) && item.available && purchasePrice != null && purchasePrice > 0);
+              }
+              const deliveryDays = (!inStockStavropol && sup?.deliveryDays > 0) ? sup.deliveryDays : null;
+              return { ...pub, clientPrice, availability, inStockStavropol, deliveryDays };
             });
             return sendJson(res, 200, { items: publicItems });
           } catch (e) {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRepairSettings } from '../hooks/useRepairSettings';
-import { PageHeader, AdminCard, AdminTabs, Field, Input, SaveBar } from '../components/ui';
+import { PageHeader, AdminCard, AdminTabs, Field, Input, SaveBar, useToast, ConfirmModal } from '../components/ui';
 import {
   computeSimplePrice,
   createDefaultCategorySettings,
@@ -9,7 +9,7 @@ import {
 } from '../../src/data/repairCategorySettings';
 import {
   fetchAdminServices, createAdminService, updateAdminService, deleteAdminService,
-  bulkAdminServices, exportServicesCsvUrl,
+  bulkAdminServices, downloadServicesCsv,
   fetchAdminSuppliers, createAdminSupplier, updateAdminSupplier, deleteAdminSupplier,
   fetchAdminSearchAnalytics, markServicesChecked,
 } from '../../src/prise/api/repairPriceApi';
@@ -167,7 +167,7 @@ const EMPTY_SVC_FORM = {
   price: '', priceFrom: '', priceTo: '',
   purchasePrice: '', laborCost: '',
   duration: '1–2 часа', hasExpress: false, expressMultiplier: 1.5,
-  popularity: 50, supplierId: '', available: true,
+  popularity: 50, supplierId: '', available: true, inStockStavropol: null,
 };
 
 function ServiceFormModal({ initial, suppliers, onSave, onClose, saving, categorySettings }) {
@@ -183,6 +183,7 @@ function ServiceFormModal({ initial, suppliers, onSave, onClose, saving, categor
       laborCost: initial.laborCost ?? '',
       brand: initial.brand ?? '',
       supplierId: initial.supplierId ?? '',
+      inStockStavropol: initial.inStockStavropol ?? null,
     };
   });
 
@@ -320,7 +321,7 @@ function ServiceFormModal({ initial, suppliers, onSave, onClose, saving, categor
             </Field>
           </div>
 
-          <div className="flex gap-6">
+          <div className="flex gap-6 flex-wrap">
             <label className="flex items-center gap-2 text-[13.5px] text-[#d1d5db] cursor-pointer">
               <input type="checkbox" checked={form.available} onChange={e => set('available', e.target.checked)} className="rounded border-white/20" />
               Доступна клиентам
@@ -330,6 +331,25 @@ function ServiceFormModal({ initial, suppliers, onSave, onClose, saving, categor
               Экспресс-ремонт
             </label>
           </div>
+
+          <Field label="В наличии в Ставрополе" hint="null = авто (по городу поставщика)">
+            <div className="flex gap-2">
+              {[
+                { v: null,  label: 'Авто' },
+                { v: true,  label: 'Да' },
+                { v: false, label: 'Нет' },
+              ].map(({ v, label }) => (
+                <button key={String(v)} type="button"
+                  onClick={() => set('inStockStavropol', v)}
+                  className={`px-3 py-1.5 rounded-lg text-[12.5px] font-medium border transition-colors ${
+                    form.inStockStavropol === v
+                      ? 'bg-[#84CC16] text-[#0a0b0e] border-[#84CC16]'
+                      : 'bg-[#0c0d10] text-[#9ca3af] border-white/[0.08] hover:text-white'
+                  }`}
+                >{label}</button>
+              ))}
+            </div>
+          </Field>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
@@ -521,7 +541,7 @@ function ServicesTab({ suppliers, categorySettings, pendingCreate, onPendingCons
     window.open(tmpl.replace('{query}', encodeURIComponent(svc.name)), '_blank');
   };
 
-  const exportUrl = exportServicesCsvUrl(selected.size > 0 ? [...selected] : null);
+  const handleExportCsv = () => downloadServicesCsv(selected.size > 0 ? [...selected] : null).catch(() => {});
   const btnCls = 'flex items-center gap-1.5 h-9 px-3 rounded-xl border border-white/[0.08] text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors text-[12.5px]';
   const chipCls = 'text-[12px] px-2.5 py-1 rounded-lg bg-white/[0.06] text-[#9ca3af] hover:text-white transition-colors flex items-center gap-1';
 
@@ -563,9 +583,9 @@ function ServicesTab({ suppliers, categorySettings, pendingCreate, onPendingCons
           <button type="button" onClick={load} className={btnCls} title="Обновить">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <a href={exportUrl} className={btnCls}>
+          <button type="button" onClick={handleExportCsv} className={btnCls}>
             <Download className="w-3.5 h-3.5" />CSV
-          </a>
+          </button>
           <button type="button" onClick={() => setAddModal({})}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#84CC16] text-[#0a0b0e] font-semibold text-[13px] hover:bg-[#a3e635] transition-colors">
             <Plus className="w-4 h-4" />Добавить
@@ -924,33 +944,66 @@ function MarkupTab({ settings, onUpdateCategory, onSave, onReset, saving, saved,
 
 // ── Suppliers Tab ─────────────────────────────────────────────────────────────
 
-const EMPTY_SUP = { name: '', url: '', searchTemplate: '', phone: '', rating: 3, note: '' };
+const EMPTY_SUP = { name: '', url: '', searchTemplate: '', phone: '', city: '', deliveryDays: '', rating: 3, note: '' };
 
-function SupplierFormModal({ initial, onSave, onClose, saving }) {
-  const [form, setForm] = useState(initial ? { ...EMPTY_SUP, ...initial } : EMPTY_SUP);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+function SupplierFormModal({ initial, existingNames, onSave, onClose, saving }) {
+  const [form, setForm] = useState(initial ? { ...EMPTY_SUP, ...initial, deliveryDays: initial.deliveryDays ?? '' } : EMPTY_SUP);
+  const [errors, setErrors] = useState({});
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); };
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = 'Обязательное поле';
+    else {
+      const dup = existingNames?.find(n => n.toLowerCase() === form.name.trim().toLowerCase() && n !== initial?.name);
+      if (dup) e.name = 'Поставщик с таким именем уже существует';
+    }
+    if (!form.url.trim() && !form.phone.trim()) e.contact = 'Укажите сайт или телефон';
+    return e;
+  };
+
+  const handleSubmit = (ev) => {
+    ev.preventDefault();
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    const data = { ...form, name: form.name.trim(), deliveryDays: form.deliveryDays ? Number(form.deliveryDays) : null };
+    onSave(data);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#0f1014] rounded-2xl border border-white/[0.1] p-5 w-full max-w-md shadow-2xl">
+      <div className="relative bg-[#0f1014] rounded-2xl border border-white/[0.1] p-5 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[15px] font-semibold text-white">{initial ? 'Редактировать поставщика' : 'Добавить поставщика'}</h2>
           <button type="button" onClick={onClose} className="text-[#6b7280] hover:text-white"><X className="w-4 h-4" /></button>
         </div>
-        <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-3">
-          <Field label="Название *">
-            <Input value={form.name} onChange={e => set('name', e.target.value)} required />
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Field label="Название *" hint={errors.name}>
+            <Input value={form.name} onChange={e => set('name', e.target.value)}
+              className={errors.name ? 'border-red-500/50' : ''} />
           </Field>
-          <Field label="Сайт">
-            <Input value={form.url} onChange={e => set('url', e.target.value)} placeholder="gsmops.ru" />
+          <Field label="Сайт" hint={errors.contact}>
+            <Input value={form.url} onChange={e => set('url', e.target.value)} placeholder="gsmops.ru"
+              className={errors.contact ? 'border-red-500/50' : ''} />
+          </Field>
+          <Field label="Телефон" hint={errors.contact && !form.url.trim() ? errors.contact : undefined}>
+            <Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+7 (800) 000-00-00"
+              className={errors.contact && !form.url.trim() ? 'border-red-500/50' : ''} />
+          </Field>
+          {errors.contact && form.url.trim() && form.phone.trim() === '' && (
+            <p className="text-[12px] text-red-400 -mt-1">{errors.contact}</p>
+          )}
+          <Field label="Город">
+            <Input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Ставрополь" />
+          </Field>
+          <Field label="Срок доставки (дней)">
+            <Input type="number" min={0} max={90} value={form.deliveryDays}
+              onChange={e => set('deliveryDays', e.target.value)} placeholder="1" />
           </Field>
           <Field label="Шаблон поиска" hint="Используйте {query} для подстановки запроса">
             <Input value={form.searchTemplate} onChange={e => set('searchTemplate', e.target.value)}
               placeholder="https://gsmops.ru/search/?query={query}" />
-          </Field>
-          <Field label="Телефон">
-            <Input value={form.phone} onChange={e => set('phone', e.target.value)} />
           </Field>
           <Field label="Рейтинг (1–5)">
             <Input type="number" min={1} max={5} value={form.rating} onChange={e => set('rating', Number(e.target.value))} />
@@ -1017,6 +1070,14 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
             </a>
           )}
 
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-1">
+            {sup.city && <span className="text-[12px] text-[#6b7280]">{sup.city}</span>}
+            {sup.phone && <span className="text-[12px] text-[#6b7280]">{sup.phone}</span>}
+            {sup.deliveryDays != null && sup.deliveryDays > 0 && (
+              <span className="text-[12px] text-[#6b7280]">Доставка: {sup.deliveryDays} дн.</span>
+            )}
+          </div>
+
           <div className={`text-[12px] mb-2 ${checkColor}`}>
             {lastCheck
               ? `Проверено: ${lastCheck.toLocaleDateString('ru')} (${daysSince} дн. назад)`
@@ -1052,7 +1113,7 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
             className="p-1.5 rounded-lg text-[#4b5563] hover:text-white hover:bg-white/[0.06] transition-colors" title="Редактировать">
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button type="button" onClick={() => !confirm('Удалить поставщика?') || onDelete(sup.id)}
+          <button type="button" onClick={() => onDelete(sup.id)}
             className="p-1.5 rounded-lg text-[#4b5563] hover:text-red-400 hover:bg-red-500/[0.08] transition-colors" title="Удалить">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -1070,15 +1131,17 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
 }
 
 function SuppliersTab() {
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name, refCount }
 
   const load = async () => {
     setLoading(true);
-    try { setItems(await fetchAdminSuppliers()); } catch {}
+    try { setItems(await fetchAdminSuppliers()); } catch (e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
   };
 
@@ -1089,15 +1152,47 @@ function SuppliersTab() {
     try {
       if (editItem) await updateAdminSupplier(editItem.id, data);
       else await createAdminSupplier(data);
-      setModal(false); setEditItem(null); load();
-    } catch (e) { alert(e.message); }
+      setModal(false); setEditItem(null);
+      toast(editItem ? 'Поставщик обновлён' : 'Поставщик добавлен');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
     finally { setSaving(false); }
   };
 
   const handleMarkChecked = async (supId) => {
-    await updateAdminSupplier(supId, { lastPriceCheck: new Date().toISOString() });
-    load();
+    try {
+      await updateAdminSupplier(supId, { lastPriceCheck: new Date().toISOString() });
+      toast('Отмечено как проверенное');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
   };
+
+  const handleDeleteRequest = async (id) => {
+    const sup = items.find(s => s.id === id);
+    try {
+      const all = await fetchAdminServices();
+      const refCount = all.filter(s => s.supplierId === id).length;
+      if (refCount > 0) {
+        setDeleteConfirm({ id, name: sup?.name ?? id, refCount });
+      } else {
+        setDeleteConfirm({ id, name: sup?.name ?? id, refCount: 0 });
+      }
+    } catch {
+      setDeleteConfirm({ id, name: sup?.name ?? id, refCount: 0 });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await deleteAdminSupplier(deleteConfirm.id);
+      toast('Поставщик удалён');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setDeleteConfirm(null); }
+  };
+
+  const existingNames = items.map(s => s.name);
 
   return (
     <div className="space-y-4">
@@ -1129,9 +1224,7 @@ function SuppliersTab() {
           {items.map(sup => (
             <SupplierCard key={sup.id} sup={sup}
               onEdit={() => { setEditItem(sup); setModal(true); }}
-              onDelete={async id => {
-                try { await deleteAdminSupplier(id); load(); } catch (e) { alert(e.message); }
-              }}
+              onDelete={handleDeleteRequest}
               onMarkChecked={handleMarkChecked}
             />
           ))}
@@ -1147,9 +1240,21 @@ function SuppliersTab() {
         </p>
       </AdminCard>
 
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title={`Удалить поставщика «${deleteConfirm?.name}»?`}
+        message={deleteConfirm?.refCount > 0
+          ? `У ${deleteConfirm.refCount} услуг(и) указан этот поставщик. После удаления поставщик будет убран из этих услуг автоматически.`
+          : 'Это действие нельзя отменить.'}
+        confirmLabel="Удалить"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+
       {(modal || editItem) && (
         <SupplierFormModal
           initial={editItem}
+          existingNames={existingNames}
           saving={saving}
           onSave={handleSave}
           onClose={() => { setModal(false); setEditItem(null); }}

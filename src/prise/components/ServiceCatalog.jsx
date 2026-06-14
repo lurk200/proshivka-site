@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CheckCircle2, Clock, HelpCircle, Package, Search,
+  CheckCircle2, Clock, HelpCircle, MapPin, Package, Search,
   SlidersHorizontal, Sparkles, TrendingUp, X, Zap,
 } from 'lucide-react';
 import { fetchServices, fetchPopularSearches } from '../api/repairPriceApi';
@@ -187,6 +187,16 @@ function ServiceCard({ svc, phone, contacts, selectedModel }) {
               {svc.brand}
             </span>
           )}
+          {svc.inStockStavropol && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#84CC16]/10 text-[#84CC16] border border-[#84CC16]/20">
+              <MapPin className="w-2.5 h-2.5" />В наличии
+            </span>
+          )}
+          {!svc.inStockStavropol && svc.deliveryDays > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
+              <Clock className="w-2.5 h-2.5" />{svc.deliveryDays} дн.
+            </span>
+          )}
           {svc.hasExpress && (
             <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
               <Zap className="w-2.5 h-2.5" />Экспресс
@@ -280,6 +290,7 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -326,7 +337,7 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
 
   useEffect(() => { load(); }, [load]);
 
-  const activeFiltersCount = [category, deviceType, partType].filter(Boolean).length;
+  const activeFiltersCount = [category, deviceType, partType].filter(Boolean).length + (onlyInStock ? 1 : 0);
 
   const availablePartTypes = useMemo(() => {
     if (deviceType === 'laptop') return PART_TYPES.filter(p => !['camera', 'speaker', 'button', 'cover'].includes(p.id));
@@ -343,18 +354,24 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
     setCategory('');
     setDeviceType('');
     setPartType('');
+    setOnlyInStock(false);
     handleSearch('');
   };
 
   // Grouped view: only when no search and no partType filter
+  const displayItems = useMemo(
+    () => onlyInStock ? items.filter(s => s.inStockStavropol) : items,
+    [items, onlyInStock],
+  );
+
   const grouped = useMemo(() => {
     if (debouncedSearch || partType) return null;
     const groups = PART_GROUPS
-      .map(g => ({ ...g, groupItems: items.filter(s => g.types.has(s.partType)) }))
+      .map(g => ({ ...g, groupItems: displayItems.filter(s => g.types.has(s.partType)) }))
       .filter(g => g.groupItems.length > 0);
     // Only use grouped if we have 2+ distinct groups (otherwise flat makes more sense)
     return groups.length >= 2 ? groups : null;
-  }, [items, debouncedSearch, partType]);
+  }, [displayItems, debouncedSearch, partType]);
 
   return (
     <div>
@@ -453,9 +470,9 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
         </div>
       )}
 
-      {/* Quick device chips */}
+      {/* Quick device chips + in-stock filter */}
       {!showFilters && (
-        <div className="mb-5">
+        <div className="mb-5 flex flex-wrap items-center gap-2">
           <ChipGroup
             options={[
               { id: '', label: 'Все' },
@@ -466,6 +483,17 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
             value={deviceType}
             onChange={v => { setDeviceType(v); setPartType(''); }}
           />
+          <button
+            type="button"
+            onClick={() => setOnlyInStock(v => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors whitespace-nowrap ${
+              onlyInStock
+                ? 'bg-[#84CC16] text-[#0a0b0e]'
+                : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-medium)]'
+            }`}
+          >
+            <MapPin className="w-3 h-3 shrink-0" />В наличии
+          </button>
         </div>
       )}
 
@@ -473,8 +501,8 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
       {!loading && !error && (
         <div className="flex items-center justify-between mb-4">
           <p className="text-[12.5px] text-[var(--text-muted)]">
-            {items.length > 0
-              ? `Найдено: ${items.length} ${items.length === 1 ? 'услуга' : items.length < 5 ? 'услуги' : 'услуг'}`
+            {displayItems.length > 0
+              ? `Найдено: ${displayItems.length} ${displayItems.length === 1 ? 'услуга' : displayItems.length < 5 ? 'услуги' : 'услуг'}`
               : 'Ничего не найдено'}
           </p>
           {debouncedSearch && (
@@ -495,11 +523,13 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
           <p>Не удалось загрузить каталог</p>
           <button type="button" onClick={load} className="mt-2 text-[#84CC16] hover:underline text-[13px]">Повторить</button>
         </div>
-      ) : items.length === 0 ? (
+      ) : displayItems.length === 0 ? (
         <div className="py-12 text-center">
           <Sparkles className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-3" />
           <p className="text-[14px] text-[var(--text-secondary)]">
-            {selectedModel
+            {onlyInStock
+              ? 'Нет услуг с запчастями в наличии в Ставрополе'
+              : selectedModel
               ? `Для «${selectedModel}» услуги не найдены${debouncedSearch ? ` по запросу «${debouncedSearch}»` : ''}`
               : debouncedSearch ? `По запросу «${debouncedSearch}» ничего не найдено` : 'Услуги не найдены'}
           </p>
@@ -526,7 +556,7 @@ export default function ServiceCatalog({ phone, contacts, selectedModel, onClear
       ) : (
         /* Flat grid view */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map(svc => (
+          {displayItems.map(svc => (
             <ServiceCard key={svc.id} svc={svc} phone={phone} contacts={contacts} selectedModel={selectedModel} />
           ))}
         </div>

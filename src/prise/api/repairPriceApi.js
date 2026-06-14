@@ -3,7 +3,17 @@ const SERVICES_BASE = '/api/services';
 const ADMIN_SERVICES_BASE = '/api/admin/services';
 const ADMIN_SUPPLIERS_BASE = '/api/admin/suppliers';
 
+function adminHeaders(extra = {}) {
+  const pwd = sessionStorage.getItem('proshivka-admin-api-key') || '';
+  return { 'X-Admin-Password': pwd, ...extra };
+}
+
 async function parseResponse(res) {
+  if (res.status === 401) {
+    sessionStorage.removeItem('proshivka-admin-api-key');
+    window.location.href = '/admin/login';
+    throw new Error('Unauthorized');
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || 'Ошибка запроса');
@@ -39,6 +49,10 @@ export async function fetchRepairPrice(modelIdOrQuery, signal, options = {}) {
   } else {
     params.set('q', value);
   }
+  try {
+    const sid = sessionStorage.getItem('proshivka-sid');
+    if (sid) params.set('sessionId', sid);
+  } catch {}
   const res = await fetch(`${API_BASE}?${params}`, { signal });
   return parseResponse(res);
 }
@@ -68,60 +82,69 @@ export async function fetchAdminServices({ category, deviceType, partType, searc
   if (search) params.set('search', search);
   if (archived !== undefined) params.set('archived', String(archived));
   const qs = params.toString();
-  const res = await fetch(`${ADMIN_SERVICES_BASE}${qs ? `?${qs}` : ''}`);
+  const res = await fetch(`${ADMIN_SERVICES_BASE}${qs ? `?${qs}` : ''}`, { headers: adminHeaders() });
   const data = await parseResponse(res);
   return data.items ?? [];
 }
 
 export async function createAdminService(data) {
-  const res = await fetch(ADMIN_SERVICES_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  const res = await fetch(ADMIN_SERVICES_BASE, { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(data) });
   return parseResponse(res);
 }
 
 export async function updateAdminService(id, patch) {
-  const res = await fetch(`${ADMIN_SERVICES_BASE}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+  const res = await fetch(`${ADMIN_SERVICES_BASE}/${id}`, { method: 'PUT', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(patch) });
   return parseResponse(res);
 }
 
 export async function deleteAdminService(id) {
-  const res = await fetch(`${ADMIN_SERVICES_BASE}/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${ADMIN_SERVICES_BASE}/${id}`, { method: 'DELETE', headers: adminHeaders() });
   return parseResponse(res);
 }
 
 export async function bulkAdminServices(ids, action, extra = {}) {
   const res = await fetch(`${ADMIN_SERVICES_BASE}/bulk`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ ids, action, ...extra }),
   });
   return parseResponse(res);
 }
 
-export function exportServicesCsvUrl(ids) {
-  if (ids?.length) return `${ADMIN_SERVICES_BASE}/export-csv?ids=${ids.join(',')}`;
-  return `${ADMIN_SERVICES_BASE}/export-csv`;
+export async function downloadServicesCsv(ids) {
+  const params = new URLSearchParams();
+  if (ids?.length) params.set('ids', ids.join(','));
+  const url = `${ADMIN_SERVICES_BASE}/export-csv${params.toString() ? `?${params}` : ''}`;
+  const res = await fetch(url, { headers: adminHeaders() });
+  if (!res.ok) throw new Error('Ошибка экспорта');
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'services.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
 export async function fetchAdminSuppliers() {
-  const res = await fetch(ADMIN_SUPPLIERS_BASE);
+  const res = await fetch(ADMIN_SUPPLIERS_BASE, { headers: adminHeaders() });
   const data = await parseResponse(res);
   return data.items ?? [];
 }
 
 export async function createAdminSupplier(data) {
-  const res = await fetch(ADMIN_SUPPLIERS_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  const res = await fetch(ADMIN_SUPPLIERS_BASE, { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(data) });
   return parseResponse(res);
 }
 
 export async function updateAdminSupplier(id, patch) {
-  const res = await fetch(`${ADMIN_SUPPLIERS_BASE}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+  const res = await fetch(`${ADMIN_SUPPLIERS_BASE}/${id}`, { method: 'PUT', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(patch) });
   return parseResponse(res);
 }
 
 export async function deleteAdminSupplier(id) {
-  const res = await fetch(`${ADMIN_SUPPLIERS_BASE}/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${ADMIN_SUPPLIERS_BASE}/${id}`, { method: 'DELETE', headers: adminHeaders() });
   return parseResponse(res);
 }
 
@@ -134,29 +157,29 @@ export async function fetchPopularSearches(limit = 10) {
 }
 
 export async function fetchAdminSearchAnalytics() {
-  const res = await fetch('/api/admin/search-analytics');
+  const res = await fetch('/api/admin/search-analytics', { headers: adminHeaders() });
   return parseResponse(res);
 }
 
 export async function fetchAdminAnalytics(headers = {}) {
-  const res = await fetch('/api/admin/analytics', { headers });
+  const res = await fetch('/api/admin/analytics', { headers: adminHeaders(headers) });
   return parseResponse(res);
 }
 
 export async function fetchAdminAnalyticsSearchDemand(headers = {}, limit = 100) {
-  const res = await fetch(`/api/admin/analytics/search-demand?limit=${limit}`, { headers });
+  const res = await fetch(`/api/admin/analytics/search-demand?limit=${limit}`, { headers: adminHeaders(headers) });
   return parseResponse(res);
 }
 
 export async function cleanupAnalyticsEvents(headers = {}) {
-  const res = await fetch('/api/admin/analytics/cleanup', { method: 'POST', headers });
+  const res = await fetch('/api/admin/analytics/cleanup', { method: 'POST', headers: adminHeaders(headers) });
   return parseResponse(res);
 }
 
 export async function markServicesChecked(ids) {
   const res = await fetch(`${ADMIN_SERVICES_BASE}/mark-checked`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: adminHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ ids }),
   });
   return parseResponse(res);
