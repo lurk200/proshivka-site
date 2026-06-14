@@ -12,6 +12,7 @@ import {
   bulkAdminServices, downloadServicesCsv,
   fetchAdminSuppliers, createAdminSupplier, updateAdminSupplier, deleteAdminSupplier,
   fetchAdminSearchAnalytics, markServicesChecked,
+  fetchSupplierSyncStatus, triggerSupplierSync,
 } from '../../src/prise/api/repairPriceApi';
 import {
   Activity, Archive, BarChart2, Check, ChevronDown, Download, Edit2, ExternalLink,
@@ -1130,6 +1131,108 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
   );
 }
 
+function StockSyncTab() {
+  const toast = useToast();
+  const [log, setLog] = useState(null);
+  const [stockCount, setStockCount] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await fetchSupplierSyncStatus();
+      setLog(data.log);
+      setStockCount(data.stockCount);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await triggerSupplierSync();
+      toast('Синхронизация запущена. Это займёт 1–3 минуты.', 'info');
+      // Poll every 10s
+      const poll = setInterval(async () => {
+        try {
+          const data = await fetchSupplierSyncStatus();
+          setLog(data.log);
+          setStockCount(data.stockCount);
+          if (data.log?.status !== 'running') {
+            clearInterval(poll);
+            setSyncing(false);
+            if (data.log?.status === 'ok') toast(`Синхронизировано ${data.stockCount} товаров`, 'success');
+            else toast(data.log?.error || 'Ошибка синхронизации', 'error');
+          }
+        } catch {}
+      }, 10000);
+    } catch (e) {
+      toast(e.message, 'error');
+      setSyncing(false);
+    }
+  };
+
+  const isRunning = syncing || log?.status === 'running';
+  const lastSync = log?.lastSync ? new Date(log.lastSync).toLocaleString('ru-RU') : null;
+
+  return (
+    <AdminCard className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-[15px] font-semibold text-white">Синхронизация склада Green Spark</h3>
+          <p className="text-[13px] text-[#9ca3af] mt-0.5">
+            Загружает актуальный ассортимент поставщика (Ставрополь) для отображения наличия на /prise.
+          </p>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={isRunning}
+          className="shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#84CC16] text-[#0a0b0e] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+        >
+          {isRunning ? 'Синхронизация...' : 'Запустить синк'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Статус</div>
+          <div className={`text-[14px] font-medium ${
+            log?.status === 'ok' ? 'text-[#84CC16]' :
+            log?.status === 'running' ? 'text-yellow-400' :
+            log?.status === 'error' ? 'text-red-400' : 'text-[#9ca3af]'
+          }`}>
+            {log?.status === 'ok' ? 'Успешно' :
+             log?.status === 'running' ? 'Выполняется...' :
+             log?.status === 'error' ? 'Ошибка' :
+             log?.status === 'never' ? 'Не запускался' : (log?.status ?? '—')}
+          </div>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Товаров в кэше</div>
+          <div className="text-[14px] font-medium text-white">{stockCount ?? '—'}</div>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Последний синк</div>
+          <div className="text-[14px] font-medium text-white">{lastSync ?? '—'}</div>
+        </div>
+        {log?.error && (
+          <div className="rounded-xl bg-red-900/20 border border-red-500/20 p-4">
+            <div className="text-[11px] text-red-400 uppercase tracking-wider mb-1">Ошибка</div>
+            <div className="text-[13px] text-red-300 font-mono break-all">{log.error}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="text-[12px] text-[#4b5563] border-t border-white/[0.04] pt-4">
+        Источник: <span className="text-[#6b7280]">green-spark.ru</span> · Категория: Комплектующие для ремонта ·
+        Обновление: вручную или по расписанию
+      </div>
+    </AdminCard>
+  );
+}
+
 function SuppliersTab() {
   const toast = useToast();
   const [items, setItems] = useState([]);
@@ -1539,6 +1642,7 @@ export default function RepairPricePage() {
     { id: 'services',   label: 'Услуги' },
     { id: 'markup',     label: 'Наценки' },
     { id: 'suppliers',  label: 'Поставщики' },
+    { id: 'stock',      label: 'Склад GS' },
     { id: 'demand',     label: 'Аналитика' },
   ];
 
@@ -1582,6 +1686,8 @@ export default function RepairPricePage() {
       )}
 
       {tab === 'suppliers' && <SuppliersTab />}
+
+      {tab === 'stock' && <StockSyncTab />}
 
       {tab === 'demand' && (
         <DemandTab onCreateService={handleCreateFromDemand} />

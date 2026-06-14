@@ -184,3 +184,18 @@ export async function markServicesChecked(ids) {
   });
   return parseResponse(res);
 }
+
+export async function fetchSupplierSyncStatus() {
+  const res = await fetch('/api/admin/supplier-sync', { headers: adminHeaders() });
+  return parseResponse(res);
+}
+
+export async function triggerSupplierSync() {
+  const res = await fetch('/api/admin/supplier-sync', { method: 'POST', headers: adminHeaders() });
+  return parseResponse(res);
+}
+
+export async function fetchSupplierStock() {
+  const res = await fetch('/api/admin/supplier-stock', { headers: adminHeaders() });
+  return parseResponse(res);
+}

@@ -4,6 +4,7 @@ import {
   getRepairPriceSettings,
   saveRepairSettings,
 } from '../server/prise/repairQuoteService.js';
+import { runSync, getSyncLog, readStock } from '../server/prise/greenSparkSync.js';
 import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
 import {
   listServices,
@@ -352,6 +353,25 @@ function registerRepairPriceApi(server) {
           } catch (e) {
             return sendJson(res, 400, { error: String(e.message) });
           }
+        }
+
+        // ── Supplier stock sync (Green Spark) ─────────────────────────────
+        if (pathname === '/api/admin/supplier-sync') {
+          if (!requireAdmin(req, res)) return;
+          if (req.method === 'GET') {
+            return sendJson(res, 200, { log: getSyncLog(), stockCount: readStock().length });
+          }
+          if (req.method === 'POST') {
+            // Start sync in background; return immediately
+            runSync().catch(() => {});
+            return sendJson(res, 202, { status: 'started' });
+          }
+          res.statusCode = 405; return res.end();
+        }
+
+        if (pathname === '/api/admin/supplier-stock') {
+          if (!requireAdmin(req, res)) return;
+          return sendJson(res, 200, { items: readStock() });
         }
 
         next();
