@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, Textarea, ArrayLinesInput, SaveBar } from '../components/ui';
 
 export default function LegalPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('legal');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('legal');
+  useUnsavedGuard(isDirty);
   const [activeIdx, setActiveIdx] = useState(0);
   const doc = draft[activeIdx];
 

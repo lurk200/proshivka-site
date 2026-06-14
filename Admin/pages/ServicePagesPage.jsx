@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { SERVICE_PAGE_KEYS, SERVICE_PAGE_LABELS } from '../../src/data/servicePagesContent';
 import { PageHeader, AdminCard, Field, Input, ArrayLinesInput, SaveBar } from '../components/ui';
 
 export default function ServicePagesPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('servicePages');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('servicePages');
+  useUnsavedGuard(isDirty);
   const [activeKey, setActiveKey] = useState(SERVICE_PAGE_KEYS[0]);
   const page = draft[activeKey];
 

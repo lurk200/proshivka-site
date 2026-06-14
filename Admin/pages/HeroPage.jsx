@@ -1,12 +1,14 @@
 import React from 'react';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, Textarea, SaveBar } from '../components/ui';
 
 export default function HeroPage() {
-  const { draft, setDraft, save, reset, saved } = usePageDraft((p) => ({
+  const { draft, setDraft, save, reset, saved, isDirty } = usePageDraft((p) => ({
     meta: p.meta,
     hero: p.hero,
   }));
+  useUnsavedGuard(isDirty);
 
   const handleSave = () => {
     save((page) => ({ ...page, meta: draft.meta, hero: draft.hero }));

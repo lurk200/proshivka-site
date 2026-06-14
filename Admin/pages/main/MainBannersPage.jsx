@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSiteDraft } from '../../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, ArrayLinesInput, SaveBar, PreviewLink } from '../../components/ui';
 
 function clampPercent(value, fallback = 100) {
@@ -30,7 +31,8 @@ function GradientSlider({ label, hint, value, onChange }) {
 }
 
 export default function MainBannersPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('mainHome');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('mainHome');
+  useUnsavedGuard(isDirty);
   const gradient = draft.bannersSection.gradient ?? {
     bottomFade: 100,
     heroOverlay: 100,

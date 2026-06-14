@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import {
   PageHeader,
   AdminCard,
@@ -27,7 +28,8 @@ function patchSection(setDraft, draft, key, patch) {
 }
 
 export default function SendRepairEditorPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('sendRepair');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('sendRepair');
+  useUnsavedGuard(isDirty);
   const [tab, setTab] = useState('hero');
 
   const setHero = (patch) => patchSection(setDraft, draft, 'hero', patch);

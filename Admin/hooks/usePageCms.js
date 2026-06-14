@@ -27,11 +27,18 @@ export function usePageDraft(selector, deps = []) {
   const { pageContent, pageDefaults, pageKey } = usePageCms();
   const { persist, saving, saved, saveError } = useAdminPersist();
   const selected = selector(pageContent);
-  const [draft, setDraft] = useState(selected);
+  const [draft, setDraftInternal] = useState(selected);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    setDraft(selector(pageContent));
+    setDraftInternal(selector(pageContent));
+    setIsDirty(false);
   }, [pageKey, pageContent, ...deps]);
+
+  const setDraft = (v) => {
+    setDraftInternal(v);
+    setIsDirty(true);
+  };
 
   const save = async (patch) => {
     await persist((prev) => ({
@@ -44,7 +51,8 @@ export function usePageDraft(selector, deps = []) {
   };
 
   const reset = () => {
-    setDraft(structuredClone(selector(pageDefaults)));
+    setDraftInternal(structuredClone(selector(pageDefaults)));
+    setIsDirty(true);
   };
 
   return {
@@ -55,6 +63,7 @@ export function usePageDraft(selector, deps = []) {
     saved,
     saving,
     saveError,
+    isDirty,
     pageKey,
     pageContent,
     pageDefaults,

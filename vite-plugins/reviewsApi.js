@@ -55,7 +55,11 @@ function handleReviews(req, res, url) {
     const orderId = url.searchParams.get('orderId');
     if (!orderId) return json(res, 400, { error: 'orderId required' });
     const review = getReviewByOrderId(orderId);
-    return json(res, 200, { exists: !!review, review: review ?? null });
+    // Return only the fields needed for form pre-fill — no PII, no moderation fields
+    const publicReview = review
+      ? { rating: review.rating, comment: review.comment ?? '' }
+      : null;
+    return json(res, 200, { exists: !!review, review: publicReview });
   }
 
   // ── Public: submit review ────────────────────────────────────────────────

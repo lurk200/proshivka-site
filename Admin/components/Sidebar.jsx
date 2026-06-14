@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, Sparkles, Wrench, FolderOpen, Lightbulb,
-  LogOut, ExternalLink, Megaphone, Terminal, Image, MapPin, Layers, Scale,
+  LayoutDashboard, Building2, Sparkles,
+  LogOut, ExternalLink, Terminal, Image, Layers, Scale,
   FileText, Navigation, LayoutTemplate, Globe, Calculator, ClipboardList,
   Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2, QrCode, Star,
 } from 'lucide-react';
+// Note: MapPin, Wrench, FolderOpen, Lightbulb, Megaphone now only used in sub-editor components
 import { useAdminAuth } from '../context/AdminAuthContext';
 
 // ─── Nav data ──────────────────────────────────────────────────────────────
@@ -13,43 +14,41 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 const GENERAL_NAV = [
   { to: '/admin', label: 'Обзор', icon: LayoutDashboard },
   { to: '/admin/analytics', label: 'Аналитика сайта', icon: BarChart2 },
-  { to: '/admin/company', label: 'Компания', icon: Building2 },
 ];
 
-const PROMO_NAV = [
-  { to: '/admin/seo', label: 'SEO и продвижение', icon: Globe },
-];
-
-const HOME_NAV = [
-  { to: '/admin/main/banners', label: 'Баннеры услуг', icon: Image },
-  { to: '/admin/main/about', label: 'О нас и карта', icon: MapPin },
-];
-
-const SOFTWARE_NAV = [
-  { to: '/admin/software-repair/hero', label: 'Hero', icon: Sparkles },
-  { to: '/admin/software-repair/sections', label: 'Заголовки секций', icon: LayoutTemplate },
-  { to: '/admin/software-repair/services', label: 'Услуги', icon: Wrench },
-  { to: '/admin/software-repair/cases', label: 'Кейсы', icon: FolderOpen },
-  { to: '/admin/software-repair/principles', label: 'О лаборатории', icon: Lightbulb },
-  { to: '/admin/software-repair/cta', label: 'Блок CTA', icon: Megaphone },
-];
-
-const SITE_NAV = [
-  { to: '/admin/send-repair', label: 'Отправить в ремонт', icon: Send },
+// ЗАКАЗЫ И КЛИЕНТЫ
+const ORDERS_NAV = [
   { to: '/admin/orders', label: 'Заказы', icon: ClipboardList },
   { to: '/admin/reviews', label: 'Отзывы', icon: Star },
   { to: '/admin/repair-price', label: 'Калькулятор цен', icon: Calculator },
-  { to: '/admin/works', label: 'Наши работы', icon: Layers },
-  { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText },
-  { to: '/admin/service-template', label: 'Шаблон услуги', icon: LayoutTemplate },
-  { to: '/admin/navigation', label: 'Меню и футер', icon: Navigation },
-  { to: '/admin/legal', label: 'Документы', icon: Scale },
 ];
 
+// КОНТЕНТ САЙТА
+const CONTENT_NAV = [
+  { to: '/admin/main', label: 'Главная страница', icon: Image },
+  { to: '/admin/software-repair', label: 'Программный ремонт', icon: Sparkles },
+  { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText },
+  { to: '/admin/service-template', label: 'Шаблон страниц услуг', icon: LayoutTemplate },
+  { to: '/admin/works', label: 'Наши работы', icon: Layers },
+  { to: '/admin/send-repair', label: 'Отправить в ремонт', icon: Send },
+];
+
+// SEO И ПРОДВИЖЕНИЕ
+const PROMO_NAV = [
+  { to: '/admin/seo', label: 'Мета-теги страниц', icon: Globe },
+  { to: '/admin/navigation', label: 'Меню и навигация', icon: Navigation },
+];
+
+// ДОКУМЕНТЫ
+const DOCS_NAV = [
+  { to: '/admin/legal', label: 'Юридические документы', icon: Scale },
+  { to: '/admin/settings/documents', label: 'Шаблоны печати', icon: QrCode },
+];
+
+// НАСТРОЙКИ
 const SETTINGS_NAV = [
+  { to: '/admin/settings/company', label: 'Компания и контакты', icon: Building2 },
   { to: '/admin/settings/notifications', label: 'Уведомления', icon: Bell },
-  { to: '/admin/settings/company', label: 'Компания', icon: Building2 },
-  { to: '/admin/settings/documents', label: 'Документы', icon: QrCode },
 ];
 
 const PREVIEW_LINKS = [
@@ -210,10 +209,10 @@ function SidebarContent({ collapsed, onCollapse, onClose }) {
           )}
         </div>
 
-        <NavGroup title="Продвижение" items={PROMO_NAV} collapsed={collapsed} />
-        <NavGroup title="Главная /" items={HOME_NAV} collapsed={collapsed} />
-        <NavGroup title="Прог. ремонт" items={SOFTWARE_NAV} collapsed={collapsed} defaultOpen={false} />
-        <NavGroup title="Сайт" items={SITE_NAV} collapsed={collapsed} />
+        <NavGroup title="Заказы и клиенты" items={ORDERS_NAV} collapsed={collapsed} />
+        <NavGroup title="Контент сайта" items={CONTENT_NAV} collapsed={collapsed} defaultOpen={false} />
+        <NavGroup title="SEO и продвижение" items={PROMO_NAV} collapsed={collapsed} defaultOpen={false} />
+        <NavGroup title="Документы" items={DOCS_NAV} collapsed={collapsed} defaultOpen={false} />
         <NavGroup title="Настройки" items={SETTINGS_NAV} collapsed={collapsed} defaultOpen={false} />
       </nav>
 

@@ -1,13 +1,15 @@
 import React from 'react';
 import { useAdminPageLabel } from '../hooks/useAdminPageKey';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { ICON_MAP } from '../../src/data/iconMap';
 import { PageHeader, AdminCard, Field, Input, Textarea, Select, SaveBar } from '../components/ui';
 
 const ICON_OPTIONS = Object.keys(ICON_MAP);
 
 export default function PrinciplesPage() {
-  const { draft, setDraft, save, reset, saved, pageKey } = usePageDraft((p) => p.principles);
+  const { draft, setDraft, save, reset, saved, isDirty, pageKey } = usePageDraft((p) => p.principles);
+  useUnsavedGuard(isDirty);
   const pageLabel = useAdminPageLabel(pageKey);
 
   return (

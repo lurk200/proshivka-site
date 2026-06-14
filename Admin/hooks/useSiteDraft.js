@@ -7,11 +7,18 @@ import { useAdminPersist } from './useAdminPersist';
 export function useSiteDraft(sectionKey) {
   const { content, defaults } = useCms();
   const { persist, saving, saved, saveError } = useAdminPersist();
-  const [draft, setDraft] = useState(() => structuredClone(content[sectionKey]));
+  const [draft, setDraftInternal] = useState(() => structuredClone(content[sectionKey]));
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    setDraft(structuredClone(content[sectionKey]));
+    setDraftInternal(structuredClone(content[sectionKey]));
+    setIsDirty(false);
   }, [sectionKey, content]);
+
+  const setDraft = (v) => {
+    setDraftInternal(v);
+    setIsDirty(true);
+  };
 
   const save = async () => {
     const ok = await persist((prev) => ({
@@ -22,8 +29,9 @@ export function useSiteDraft(sectionKey) {
   };
 
   const reset = () => {
-    setDraft(structuredClone(defaults[sectionKey]));
+    setDraftInternal(structuredClone(defaults[sectionKey]));
+    setIsDirty(true);
   };
 
-  return { draft, setDraft, save, reset, saved, saving, saveError };
+  return { draft, setDraft, save, reset, saved, saving, saveError, isDirty };
 }

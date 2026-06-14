@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from 'lucide-react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { createEmptyWork, duplicateWork } from '../../src/data/worksContent';
 import {
   PageHeader,
@@ -23,7 +24,8 @@ function moveItem(list, from, to) {
 }
 
 export default function WorksPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('works');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('works');
+  useUnsavedGuard(isDirty);
   const [tab, setTab] = useState('works');
   const [openId, setOpenId] = useState(null);
 

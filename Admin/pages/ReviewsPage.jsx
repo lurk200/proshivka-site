@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle, Clock, MessageSquare, RefreshCw, Star, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, CheckCircle, ClipboardList, MessageSquare, RefreshCw, Star, ThumbsUp, X } from 'lucide-react';
 import { AdminCard, PageHeader } from '../components/ui';
 
 function adminHeaders() {
@@ -106,7 +107,18 @@ function ReviewCard({ review, onStatusChange }) {
               <span className="text-[12px] text-[#6b7280]">📱 {review.device}</span>
             )}
             {review.orderNumber && (
-              <span className="text-[12px] text-[#6b7280] font-mono">№ {review.orderNumber}</span>
+              <span className="text-[12px] text-[#6b7280] font-mono">
+                № {review.orderNumber}
+              </span>
+            )}
+            {review.orderId && (
+              <Link
+                to={`/admin/orders?highlight=${review.orderId}`}
+                className="text-[11px] text-[#4b5563] hover:text-[#84CC16] transition-colors"
+                title="Открыть заказ"
+              >
+                <ClipboardList className="w-3.5 h-3.5 inline mr-0.5" />к заказу
+              </Link>
             )}
             {review.masterName && (
               <span className="text-[12px] text-[#6b7280]">Мастер: {review.masterName}</span>
@@ -161,6 +173,9 @@ function ReviewCard({ review, onStatusChange }) {
 }
 
 export default function ReviewsPage() {
+  const [searchParams] = useSearchParams();
+  const filterOrderId = searchParams.get('orderId') || null;
+
   const [tab, setTab] = useState('all');
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
@@ -182,6 +197,10 @@ export default function ReviewsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const displayedReviews = filterOrderId
+    ? reviews.filter(r => r.orderId === filterOrderId)
+    : reviews;
+
   return (
     <>
       <PageHeader
@@ -198,6 +217,17 @@ export default function ReviewsPage() {
           </button>
         }
       />
+
+      {/* Back to orders when filtering by orderId */}
+      {filterOrderId && (
+        <Link
+          to="/admin/orders"
+          className="inline-flex items-center gap-1.5 mb-4 text-[13px] text-[#6b7280] hover:text-[#9ca3af] transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Вернуться к заказам
+        </Link>
+      )}
 
       {/* Urgent alert */}
       {stats?.urgent > 0 && (
@@ -270,14 +300,16 @@ export default function ReviewsPage() {
         <div className="flex items-center justify-center py-16 text-[#6b7280]">
           <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Загрузка…
         </div>
-      ) : reviews.length === 0 ? (
+      ) : displayedReviews.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#4b5563]">
           <MessageSquare className="w-10 h-10 mb-3 opacity-40" />
-          <p className="text-[14px]">Нет отзывов в этой категории</p>
+          <p className="text-[14px]">
+            {filterOrderId ? 'Клиент ещё не оставил отзыв по этому заказу' : 'Нет отзывов в этой категории'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {reviews.map(r => (
+          {displayedReviews.map(r => (
             <ReviewCard key={r.id} review={r} onStatusChange={load} />
           ))}
         </div>

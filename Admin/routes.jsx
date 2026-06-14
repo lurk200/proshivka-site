@@ -6,22 +6,16 @@ import AdminLayout from './layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CompanyPage from './pages/CompanyPage';
-import HeroPage from './pages/HeroPage';
-import ServicesPage from './pages/ServicesPage';
-import CasesPage from './pages/CasesPage';
-import PrinciplesPage from './pages/PrinciplesPage';
-import CtaPage from './pages/CtaPage';
-import SectionsPage from './pages/SectionsPage';
 import LegalPage from './pages/LegalPage';
 import ServicePagesPage from './pages/ServicePagesPage';
 import ServiceTemplatePage from './pages/ServiceTemplatePage';
 import NavigationPage from './pages/NavigationPage';
-import MainBannersPage from './pages/main/MainBannersPage';
-import MainAboutPage from './pages/main/MainAboutPage';
+import MainPageEditorPage from './pages/main/MainPageEditorPage';
 import WorksPage from './pages/WorksPage';
 import SeoPage from './pages/SeoPage';
 import RepairPricePage from './pages/RepairPricePage';
 import OrdersPage from './pages/OrdersPage';
+import SoftwareRepairEditorPage from './pages/SoftwareRepairEditorPage';
 import SendRepairEditorPage from './pages/SendRepairEditorPage';
 import NotificationsSettingsPage from './pages/settings/NotificationsSettingsPage';
 import CompanySettingsPage from './pages/settings/CompanySettingsPage';
@@ -29,18 +23,10 @@ import DocumentSettingsPage from './pages/settings/DocumentSettingsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ReviewsPage from './pages/ReviewsPage';
 
-const softwareRepairEditors = [
-  { path: 'hero', element: <HeroPage /> },
-  { path: 'sections', element: <SectionsPage /> },
-  { path: 'services', element: <ServicesPage /> },
-  { path: 'cases', element: <CasesPage /> },
-  { path: 'principles', element: <PrinciplesPage /> },
-  { path: 'cta', element: <CtaPage /> },
-];
-
-const legacyRedirects = ['hero', 'services', 'cases', 'principles', 'cta'].map((path) => ({
-  path,
-  element: <Navigate to={`/admin/software-repair/${path}`} replace />,
+// Deep-link redirects: /admin/software-repair/hero → /admin/software-repair?tab=hero
+const softwareRepairTabRedirects = ['hero', 'sections', 'services', 'cases', 'principles', 'cta'].map((tab) => ({
+  path: `software-repair/${tab}`,
+  element: <Navigate to={`/admin/software-repair?tab=${tab}`} replace />,
 }));
 
 export const adminRoutes = [
@@ -63,8 +49,6 @@ export const adminRoutes = [
           { path: 'legal', element: <LegalPage /> },
           { path: 'service-pages', element: <ServicePagesPage /> },
           { path: 'service-template', element: <ServiceTemplatePage /> },
-          { path: 'main/banners', element: <MainBannersPage /> },
-          { path: 'main/about', element: <MainAboutPage /> },
           { path: 'works', element: <WorksPage /> },
           { path: 'repair-price', element: <RepairPricePage /> },
           { path: 'orders', element: <OrdersPage /> },
@@ -73,15 +57,12 @@ export const adminRoutes = [
           { path: 'settings/company', element: <CompanySettingsPage /> },
           { path: 'settings/documents', element: <DocumentSettingsPage /> },
           { path: 'analytics', element: <AnalyticsPage /> },
-          { path: 'main/works', element: <Navigate to="/admin/works" replace /> },
-          { path: 'main/seo', element: <Navigate to="/admin/seo" replace /> },
-          { path: 'software-repair/reviews', element: <Navigate to="/admin/reviews" replace /> },
+          { path: 'software-repair', element: <SoftwareRepairEditorPage /> },
+          { path: 'main', element: <MainPageEditorPage /> },
+          { path: 'main/banners', element: <Navigate to="/admin/main?tab=banners" replace /> },
+          { path: 'main/about', element: <Navigate to="/admin/main?tab=about" replace /> },
           { path: 'reviews', element: <ReviewsPage /> },
-          ...legacyRedirects,
-          {
-            path: 'software-repair',
-            children: softwareRepairEditors,
-          },
+          ...softwareRepairTabRedirects,
         ],
       },
     ],

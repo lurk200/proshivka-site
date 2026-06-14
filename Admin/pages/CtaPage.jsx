@@ -1,10 +1,12 @@
 import React from 'react';
 import { useAdminPageLabel } from '../hooks/useAdminPageKey';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, Textarea, SaveBar } from '../components/ui';
 
 export default function CtaPage() {
-  const { draft, setDraft, save, reset, saved, pageKey } = usePageDraft((p) => p.cta);
+  const { draft, setDraft, save, reset, saved, isDirty, pageKey } = usePageDraft((p) => p.cta);
+  useUnsavedGuard(isDirty);
   const pageLabel = useAdminPageLabel(pageKey);
 
   return (

@@ -65,6 +65,16 @@ const DEFAULT_TEMPLATES = [
     body: 'Здравствуйте, {{clientName}}!\n\nДиагностика {{device}} завершена. Стоимость ремонта: {{cost}}.\n{{clientComment}}\nПодтвердить или уточнить детали: {{trackUrl}}',
   },
   {
+    id: 'status_waiting_parts',
+    eventType: 'status_waiting_parts',
+    name: 'Ожидаем запчасти',
+    description: 'Устройство ожидает поступления запчастей',
+    enabled: true,
+    channels: { email: false, telegram: false, whatsapp: false, sms: false },
+    subject: 'Заказ {{orderNumber}} — ожидаем запчасти',
+    body: 'Здравствуйте, {{clientName}}!\n\nВаш {{device}} (заказ {{orderNumber}}) ожидает запчасти. Мы сообщим, как только продолжим работу.\n{{clientComment}}\nСледить за статусом: {{trackUrl}}',
+  },
+  {
     id: 'status_ready',
     eventType: 'status_ready',
     name: 'Готово к выдаче',

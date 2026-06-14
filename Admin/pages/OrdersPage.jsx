@@ -32,7 +32,7 @@ import OrderSlideOver from './orders/OrderSlideOver';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function exportCSV(orders) {
+function exportCSV(orders, filename) {
   const cols = ['Номер', 'Статус', 'Клиент', 'Телефон', 'Устройство', 'Сумма', 'Предоплата', 'Менеджер', 'Создан', 'Комментарий'];
   const rows = orders.map(o => [
     o.orderNumber ?? '',
@@ -53,7 +53,7 @@ function exportCSV(orders) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = filename ?? `orders_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -67,6 +67,98 @@ function useDebounce(value, ms = 300) {
     return () => clearTimeout(t);
   }, [value, ms]);
   return debounced;
+}
+
+// ─── CsvExportModal ───────────────────────────────────────────────────────────
+
+function CsvExportModal({ open, onClose, orders }) {
+  const [from, setFrom] = React.useState('');
+  const [to, setTo] = React.useState('');
+  const [status, setStatus] = React.useState('');
+
+  if (!open) return null;
+
+  const filtered = orders.filter(o => {
+    if (from && new Date(o.createdAt) < new Date(from)) return false;
+    if (to && new Date(o.createdAt) > new Date(to + 'T23:59:59')) return false;
+    if (status && o.status !== status) return false;
+    return true;
+  });
+
+  const inputCls = 'w-full px-3 py-2.5 rounded-xl bg-[#0c0d10] border border-white/[0.08] text-[#f3f4f6] text-[13px] focus:outline-none focus:border-[#84CC16]/40 transition-colors';
+  const labelCls = 'block text-[11px] text-[#9ca3af] mb-1.5 font-medium uppercase tracking-wide';
+
+  const handleExport = () => {
+    const parts = [from && `c_${from}`, to && `по_${to}`, status && STATUS_CONFIG[status]?.label].filter(Boolean);
+    const filename = `orders${parts.length ? '_' + parts.join('_') : ''}_${new Date().toISOString().slice(0, 10)}.csv`;
+    exportCSV(filtered, filename);
+    onClose();
+  };
+
+  const hasFilter = from || to || status;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-3">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[#14161a] border border-white/[0.1] rounded-2xl shadow-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-[15px] font-semibold text-white">Экспорт в CSV</h2>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>С даты</label>
+              <input type="date" value={from} onChange={e => setFrom(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>По дату</label>
+              <input type="date" value={to} onChange={e => setTo(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Статус</label>
+            <div className="relative">
+              <select value={status} onChange={e => setStatus(e.target.value)}
+                className={`${inputCls} pr-8 appearance-none`}>
+                <option value="">Все статусы</option>
+                {ORDER_STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b7280] pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] text-[#9ca3af]">
+              Будет экспортировано: <span className="text-white font-semibold">{filtered.length}</span> заказов
+            </p>
+            {hasFilter && (
+              <button type="button" onClick={() => { setFrom(''); setTo(''); setStatus(''); }}
+                className="text-[12px] text-[#84CC16] hover:underline">
+                Сбросить
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-white/[0.1] text-[#9ca3af] text-[13.5px] hover:text-white transition-colors">
+            Отмена
+          </button>
+          <button type="button" onClick={handleExport} disabled={filtered.length === 0}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#84CC16] text-[#0c0d10] font-semibold text-[13.5px] hover:bg-[#9be02a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            <Download className="w-4 h-4" />
+            Скачать CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
@@ -474,6 +566,7 @@ function MobileCard({ order, selected, onSelect, onOpen, onQuickStatus }) {
 function BulkActionBar({ count, orders, selectedIds, onClear, onBulkStatus, onBulkDelete, onBulkExport }) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState(null); // { id, label }
 
   if (count === 0) return null;
 
@@ -507,7 +600,7 @@ function BulkActionBar({ count, orders, selectedIds, onClear, onBulkStatus, onBu
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => { onBulkStatus(s.id); setStatusOpen(false); }}
+                    onClick={() => { setConfirmStatus({ id: s.id, label: s.label }); setStatusOpen(false); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] hover:bg-white/[0.06] text-white text-left"
                   >
                     <span className={`w-2 h-2 rounded-full ${c?.dot ?? 'bg-gray-400'}`} />
@@ -545,6 +638,15 @@ function BulkActionBar({ count, orders, selectedIds, onClear, onBulkStatus, onBu
         confirmLabel="Удалить всё"
         onConfirm={() => { setConfirmDel(false); onBulkDelete(); }}
         onCancel={() => setConfirmDel(false)}
+      />
+
+      <ConfirmModal
+        open={!!confirmStatus}
+        title={`Сменить статус у ${count} заказ(а)?`}
+        message={`Новый статус: «${confirmStatus?.label}»`}
+        confirmLabel="Изменить"
+        onConfirm={() => { const s = confirmStatus; setConfirmStatus(null); onBulkStatus(s.id); }}
+        onCancel={() => setConfirmStatus(null)}
       />
     </>
   );
@@ -884,6 +986,7 @@ export default function OrdersPage() {
 
   // Modals
   const [creating, setCreating] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
 
   const debouncedSearch = useDebounce(search, 250);
 
@@ -1115,7 +1218,7 @@ export default function OrdersPage() {
           loading={loading}
           onRefresh={load}
           onNew={() => setCreating(true)}
-          onExport={() => exportCSV(filteredOrders)}
+          onExport={() => setExportModal(true)}
           totalFiltered={filteredOrders.length}
           totalAll={orders.length}
         />
@@ -1275,6 +1378,13 @@ export default function OrdersPage() {
         open={creating}
         onCreate={handleCreate}
         onClose={() => setCreating(false)}
+      />
+
+      {/* CSV export modal */}
+      <CsvExportModal
+        open={exportModal}
+        onClose={() => setExportModal(false)}
+        orders={filteredOrders}
       />
     </>
   );

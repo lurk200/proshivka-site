@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAdminPageKey, useAdminPageLabel } from '../hooks/useAdminPageKey';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PAGE_KEYS } from '../../src/data/cmsStore';
 import { ICON_MAP } from '../../src/data/iconMap';
 import { PageHeader, AdminCard, Field, Input, Textarea, Select, SaveBar } from '../components/ui';
@@ -30,7 +31,8 @@ function ServiceEditor({ service, onChange }) {
 }
 
 export default function ServicesPage() {
-  const { draft, setDraft, save, reset, saved, pageKey } = usePageDraft((p) => p.services);
+  const { draft, setDraft, save, reset, saved, isDirty, pageKey } = usePageDraft((p) => p.services);
+  useUnsavedGuard(isDirty);
   const pageLabel = useAdminPageLabel(pageKey);
   const isSoftwarePage = pageKey === PAGE_KEYS.SOFTWARE_REPAIR;
 

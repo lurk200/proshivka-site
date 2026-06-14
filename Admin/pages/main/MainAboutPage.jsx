@@ -1,9 +1,11 @@
 import React from 'react';
 import { useSiteDraft } from '../../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../../components/ui';
 
 export default function MainAboutPage() {
-  const { draft, setDraft, save, reset, saved, saving, saveError } = useSiteDraft('mainHome');
+  const { draft, setDraft, save, reset, saved, saving, saveError, isDirty } = useSiteDraft('mainHome');
+  useUnsavedGuard(isDirty);
   const about = draft.about;
 
   const setAbout = (patch) => setDraft({ ...draft, about: { ...about, ...patch } });

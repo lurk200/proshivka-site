@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAdminPageLabel } from '../hooks/useAdminPageKey';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../components/ui';
 
 const SECTION_KEYS = [
@@ -10,7 +11,8 @@ const SECTION_KEYS = [
 ];
 
 export default function SectionsPage() {
-  const { draft, setDraft, save, reset, saved, pageKey } = usePageDraft((p) => p.sections);
+  const { draft, setDraft, save, reset, saved, isDirty, pageKey } = usePageDraft((p) => p.sections);
+  useUnsavedGuard(isDirty);
   const pageLabel = useAdminPageLabel(pageKey);
 
   const updateSection = (key, patch) => {

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bell, Check, ChevronDown, ChevronRight, Eye, EyeOff,
   Loader2, Mail, MessageCircle, Phone, RefreshCw,
-  Save, Send, Smartphone, ToggleLeft, ToggleRight, X,
+  Save, Send, Smartphone, ToggleLeft, ToggleRight, X, ExternalLink,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui';
 import {
@@ -273,7 +274,20 @@ function NotificationLog({ events, loading, onRefresh }) {
                   {ev.status}
                 </span>
               </td>
-              <td className="px-3 py-2.5 font-mono text-[12px] text-white">{ev.orderNumber}</td>
+              <td className="px-3 py-2.5 font-mono text-[12px]">
+                {ev.orderId ? (
+                  <Link
+                    to={`/admin/orders?highlight=${ev.orderId}`}
+                    className="text-[#84CC16] hover:underline flex items-center gap-1"
+                    title="Открыть заказ"
+                  >
+                    {ev.orderNumber}
+                    <ExternalLink className="w-3 h-3 opacity-60" />
+                  </Link>
+                ) : (
+                  <span className="text-white">{ev.orderNumber}</span>
+                )}
+              </td>
               <td className="px-3 py-2.5 text-[12px] text-[#9ca3af]">{ev.templateId}</td>
               <td className="px-3 py-2.5 text-[12px] text-[#e5e7eb] max-w-[200px] truncate">{ev.subject}</td>
               <td className="px-3 py-2.5 text-[11px] text-[#6b7280] whitespace-nowrap">{formatDt(ev.createdAt)}</td>

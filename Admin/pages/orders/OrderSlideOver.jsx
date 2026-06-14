@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   X, Phone, User, Cpu, Clock, FileText, DollarSign,
   MessageSquare, Save, Trash2, Printer, ChevronDown, CheckCircle,
-  AlertTriangle, Bell, TrendingUp, Calculator, Search,
+  AlertTriangle, Bell, TrendingUp, Calculator, Search, Star, ExternalLink,
 } from 'lucide-react';
 import { useCms } from '../../../src/context/CmsContext';
 import { Field, Input, AdminTabs, ConfirmModal } from '../../components/ui';
@@ -830,9 +830,17 @@ export default function OrderSlideOver({ order, open, onClose, onSave, onDelete 
             target="_blank"
             rel="noopener noreferrer"
             className="p-2.5 rounded-xl border border-white/[0.1] text-[#9ca3af] hover:text-white hover:border-white/[0.2] transition-colors"
-            title="Статус на сайте"
+            title="Открыть как клиент"
           >
-            <FileText className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" />
+          </a>
+
+          <a
+            href={`/admin/reviews?orderId=${encodeURIComponent(order.id)}`}
+            className="p-2.5 rounded-xl border border-white/[0.1] text-[#9ca3af] hover:text-amber-400 hover:border-amber-400/30 transition-colors"
+            title="Отзыв клиента"
+          >
+            <Star className="w-4 h-4" />
           </a>
 
           <button

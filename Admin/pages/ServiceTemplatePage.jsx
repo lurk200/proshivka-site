@@ -1,9 +1,11 @@
 import React from 'react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, Textarea, SaveBar } from '../components/ui';
 
 export default function ServiceTemplatePage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('serviceTemplate');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('serviceTemplate');
+  useUnsavedGuard(isDirty);
 
   const updateProcess = (idx, patch) => {
     const process = [...draft.process];

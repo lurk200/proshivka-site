@@ -1,10 +1,12 @@
 import React from 'react';
 import { useAdminPageLabel } from '../hooks/useAdminPageKey';
 import { usePageDraft } from '../hooks/usePageCms';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, Textarea, SaveBar } from '../components/ui';
 
 export default function CasesPage() {
-  const { draft, setDraft, save, reset, saved, pageKey } = usePageDraft((p) => p.portfolio);
+  const { draft, setDraft, save, reset, saved, isDirty, pageKey } = usePageDraft((p) => p.portfolio);
+  useUnsavedGuard(isDirty);
   const pageLabel = useAdminPageLabel(pageKey);
 
   const updateCase = (idx, patch) => {

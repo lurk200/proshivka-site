@@ -45,7 +45,7 @@ function isAdminRequest(req) {
 const STATUS_NOTIFY_MAP = {
   accepted:      'order_created',
   in_progress:   'status_in_progress',
-  waiting_parts: 'status_cost_approval',
+  waiting_parts: 'status_waiting_parts',
   ready:         'status_ready',
   completed:     'order_completed',
 };

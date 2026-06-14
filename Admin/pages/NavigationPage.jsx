@@ -1,9 +1,11 @@
 import React from 'react';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../components/ui';
 
 export default function NavigationPage() {
-  const { draft, setDraft, save, reset, saved } = useSiteDraft('siteNavigation');
+  const { draft, setDraft, save, reset, saved, isDirty } = useSiteDraft('siteNavigation');
+  useUnsavedGuard(isDirty);
 
   const updateNav = (idx, patch) => {
     const serviceNav = [...draft.serviceNav];
