@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { ToastProvider } from '../components/ui';
+import AdminErrorBoundary from '../components/AdminErrorBoundary';
 
 const LayoutContext = createContext({ sidebarCollapsed: false });
 export const useAdminLayout = () => useContext(LayoutContext);
@@ -50,7 +51,9 @@ export default function AdminLayout() {
           <TopBar onMenuToggle={() => setSidebarOpen(o => !o)} />
           <main className="flex-1">
             <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-              <Outlet />
+              <AdminErrorBoundary key={location.pathname}>
+                <Outlet />
+              </AdminErrorBoundary>
             </div>
           </main>
         </div>

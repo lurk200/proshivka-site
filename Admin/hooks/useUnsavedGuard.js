@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
-import { useBlocker } from 'react-router-dom';
 
+// NOTE: useBlocker (React Router) requires createBrowserRouter (data router).
+// The app uses <BrowserRouter>, so we guard only browser-level navigation
+// (refresh / close tab / navigate away). SPA link clicks are not blocked,
+// but the SaveBar is always visible, keeping the UX clear enough.
 export function useUnsavedGuard(isDirty) {
   useEffect(() => {
     if (!isDirty) return;
@@ -8,15 +11,4 @@ export function useUnsavedGuard(isDirty) {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
-
-  const blocker = useBlocker(isDirty);
-
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-    if (window.confirm('Есть несохранённые изменения. Покинуть страницу?')) {
-      blocker.proceed();
-    } else {
-      blocker.reset();
-    }
-  }, [blocker]);
 }
