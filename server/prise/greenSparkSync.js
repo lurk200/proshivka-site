@@ -199,14 +199,17 @@ export async function runSync() {
       // Solve Qrator challenge by visiting main page (with networkidle to let JS run fully)
       await page.goto(BASE_URL + '/', { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForFunction(() => !document.querySelector('meta[content="noindex, noarchive"]'), { timeout: 15000 });
-      await new Promise(r => setTimeout(r, 3000));
 
-      // Navigate organically: try to find catalog link and click it first
-      const catalogAnchor = page.locator('a[href*="/catalog/"]').first();
-      if (await catalogAnchor.count() > 0) {
-        await catalogAnchor.click();
-        await new Promise(r => setTimeout(r, PAGE_DELAY_MS));
-      }
+      // Dismiss city selection popup if it appeared
+      try {
+        const cityPopup = page.locator('#select-city-dropdown');
+        if (await cityPopup.isVisible({ timeout: 3000 })) {
+          await page.keyboard.press('Escape');
+          await new Promise(r => setTimeout(r, 500));
+        }
+      } catch {}
+
+      await new Promise(r => setTimeout(r, 2000));
 
       for (const catPath of TARGET_CATEGORIES) {
         let page_num = 1;
