@@ -199,3 +199,15 @@ export async function fetchSupplierStock() {
   const res = await fetch('/api/admin/supplier-stock', { headers: adminHeaders() });
   return parseResponse(res);
 }
+
+export async function fetchLibertiMapStatus() {
+  const res = await fetch('/api/admin/liberti-model-map', { headers: adminHeaders() });
+  return parseResponse(res);
+}
+
+/** brands = ['apple','samsung'] or null = all brands */
+export async function triggerLibertiMapBuild(brands = null) {
+  const qs = brands?.length ? `?brands=${brands.join(',')}` : '';
+  const res = await fetch(`/api/admin/liberti-model-map${qs}`, { method: 'POST', headers: adminHeaders() });
+  return parseResponse(res);
+}

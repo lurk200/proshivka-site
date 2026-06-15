@@ -13,6 +13,7 @@ import {
   fetchAdminSuppliers, createAdminSupplier, updateAdminSupplier, deleteAdminSupplier,
   fetchAdminSearchAnalytics, markServicesChecked,
   fetchSupplierSyncStatus, triggerSupplierSync,
+  fetchLibertiMapStatus, triggerLibertiMapBuild,
 } from '../../src/prise/api/repairPriceApi';
 import {
   Activity, Archive, BarChart2, Check, ChevronDown, Download, Edit2, ExternalLink,
@@ -1062,6 +1063,19 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
                 <Star key={i} className={`w-3 h-3 ${i < sup.rating ? 'text-amber-400 fill-amber-400' : 'text-[#2d3139]'}`} />
               ))}
             </div>
+            {sup.dataSource?.type && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
+                sup.dataSource.type === 'ssr_page'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  : sup.dataSource.type === 'catalog_sync'
+                  ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                  : 'bg-white/[0.05] text-[#6b7280] border-white/[0.08]'
+              }`}>
+                {sup.dataSource.type === 'ssr_page' ? 'SSR синк'
+                  : sup.dataSource.type === 'catalog_sync' ? 'Каталог'
+                  : sup.dataSource.type}
+              </span>
+            )}
           </div>
 
           {sup.url && (
@@ -1131,6 +1145,111 @@ function SupplierCard({ sup, onEdit, onDelete, onMarkChecked }) {
   );
 }
 
+function LibertiMapCard() {
+  const toast = useToast();
+  const [status, setStatus] = useState(null);
+  const [building, setBuilding] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await fetchLibertiMapStatus();
+      setStatus(data);
+      if (data.running !== building) setBuilding(!!data.running);
+    } catch {}
+  }, [building]);
+
+  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!building) return;
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
+  }, [building, load]);
+
+  const handleBuild = async (brands = null) => {
+    setBuilding(true);
+    try {
+      await triggerLibertiMapBuild(brands);
+      const hint = brands ? `(${brands.join(', ')}) ~30–60 с` : 'все бренды ~5 мин';
+      toast(`Построение карты запущено ${hint}`, 'info');
+    } catch (e) {
+      toast(e.message, 'error');
+      setBuilding(false);
+    }
+  };
+
+  const stats = status?.stats;
+  const log = status?.log ?? [];
+  const lastUpdated = stats?.lastUpdated
+    ? new Date(stats.lastUpdated).toLocaleString('ru-RU')
+    : null;
+
+  return (
+    <AdminCard className="space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h3 className="text-[15px] font-semibold text-white">Карта моделей Liberti</h3>
+          <p className="text-[13px] text-[#9ca3af] mt-0.5">
+            URL-адреса моделей для точного резолва страниц. Нужна для моделей с числовыми ID (Galaxy S26+).
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => handleBuild(['apple', 'samsung'])}
+            disabled={building}
+            className="px-3 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] border border-white/[0.08] text-white disabled:opacity-50 transition-opacity"
+          >
+            Samsung + Apple
+          </button>
+          <button
+            onClick={() => handleBuild()}
+            disabled={building}
+            className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#84CC16] text-[#0a0b0e] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          >
+            {building ? 'Обновляется...' : 'Все бренды'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Моделей</div>
+          <div className="text-[14px] font-medium text-white">{stats?.count ?? '—'}</div>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Брендов</div>
+          <div className="text-[14px] font-medium text-white">{stats?.brands?.length ?? '—'}</div>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Обновлено</div>
+          <div className="text-[12px] font-medium text-white">{lastUpdated ?? 'Никогда'}</div>
+        </div>
+      </div>
+
+      {building && log.length > 0 && (
+        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-2">Лог</div>
+          <div className="text-[12px] text-[#9ca3af] font-mono space-y-0.5 max-h-28 overflow-auto">
+            {log.slice(-15).map((line, i) => <div key={i}>{line}</div>)}
+          </div>
+        </div>
+      )}
+
+      {stats?.brands?.length > 0 && (
+        <div className="text-[12px] text-[#4b5563] border-t border-white/[0.04] pt-3">
+          Бренды: <span className="text-[#6b7280]">{stats.brands.join(', ')}</span>
+        </div>
+      )}
+
+      {!stats?.count && !building && (
+        <div className="text-[12px] text-amber-400/80 border-t border-white/[0.04] pt-3">
+          Карта пуста — нажмите «Samsung + Apple» для первого запуска
+        </div>
+      )}
+    </AdminCard>
+  );
+}
+
 function StockSyncTab() {
   const toast = useToast();
   const [log, setLog] = useState(null);
@@ -1178,58 +1297,62 @@ function StockSyncTab() {
   const lastSync = log?.lastSync ? new Date(log.lastSync).toLocaleString('ru-RU') : null;
 
   return (
-    <AdminCard className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-[15px] font-semibold text-white">Синхронизация склада Green Spark</h3>
-          <p className="text-[13px] text-[#9ca3af] mt-0.5">
-            Загружает актуальный ассортимент поставщика (Ставрополь) для отображения наличия на /prise.
-          </p>
-        </div>
-        <button
-          onClick={handleSync}
-          disabled={isRunning}
-          className="shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#84CC16] text-[#0a0b0e] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-        >
-          {isRunning ? 'Синхронизация...' : 'Запустить синк'}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Статус</div>
-          <div className={`text-[14px] font-medium ${
-            log?.status === 'ok' ? 'text-[#84CC16]' :
-            log?.status === 'running' ? 'text-yellow-400' :
-            log?.status === 'error' ? 'text-red-400' : 'text-[#9ca3af]'
-          }`}>
-            {log?.status === 'ok' ? 'Успешно' :
-             log?.status === 'running' ? 'Выполняется...' :
-             log?.status === 'error' ? 'Ошибка' :
-             log?.status === 'never' ? 'Не запускался' : (log?.status ?? '—')}
+    <div className="space-y-4">
+      <AdminCard className="space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-[15px] font-semibold text-white">Синхронизация склада Green Spark</h3>
+            <p className="text-[13px] text-[#9ca3af] mt-0.5">
+              Загружает актуальный ассортимент поставщика (Ставрополь) для отображения наличия на /prise.
+            </p>
           </div>
+          <button
+            onClick={handleSync}
+            disabled={isRunning}
+            className="shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#84CC16] text-[#0a0b0e] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          >
+            {isRunning ? 'Синхронизация...' : 'Запустить синк'}
+          </button>
         </div>
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Товаров в кэше</div>
-          <div className="text-[14px] font-medium text-white">{stockCount ?? '—'}</div>
-        </div>
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Последний синк</div>
-          <div className="text-[14px] font-medium text-white">{lastSync ?? '—'}</div>
-        </div>
-        {log?.error && (
-          <div className="rounded-xl bg-red-900/20 border border-red-500/20 p-4">
-            <div className="text-[11px] text-red-400 uppercase tracking-wider mb-1">Ошибка</div>
-            <div className="text-[13px] text-red-300 font-mono break-all">{log.error}</div>
-          </div>
-        )}
-      </div>
 
-      <div className="text-[12px] text-[#4b5563] border-t border-white/[0.04] pt-4">
-        Источник: <span className="text-[#6b7280]">green-spark.ru</span> · Категория: Комплектующие для ремонта ·
-        Обновление: вручную или по расписанию
-      </div>
-    </AdminCard>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Статус</div>
+            <div className={`text-[14px] font-medium ${
+              log?.status === 'ok' ? 'text-[#84CC16]' :
+              log?.status === 'running' ? 'text-yellow-400' :
+              log?.status === 'error' ? 'text-red-400' : 'text-[#9ca3af]'
+            }`}>
+              {log?.status === 'ok' ? 'Успешно' :
+               log?.status === 'running' ? 'Выполняется...' :
+               log?.status === 'error' ? 'Ошибка' :
+               log?.status === 'never' ? 'Не запускался' : (log?.status ?? '—')}
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Товаров в кэше</div>
+            <div className="text-[14px] font-medium text-white">{stockCount ?? '—'}</div>
+          </div>
+          <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+            <div className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Последний синк</div>
+            <div className="text-[14px] font-medium text-white">{lastSync ?? '—'}</div>
+          </div>
+          {log?.error && (
+            <div className="rounded-xl bg-red-900/20 border border-red-500/20 p-4">
+              <div className="text-[11px] text-red-400 uppercase tracking-wider mb-1">Ошибка</div>
+              <div className="text-[13px] text-red-300 font-mono break-all">{log.error}</div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-[12px] text-[#4b5563] border-t border-white/[0.04] pt-4">
+          Источник: <span className="text-[#6b7280]">green-spark.ru</span> · Категория: Комплектующие для ремонта ·
+          Обновление: вручную или по расписанию
+        </div>
+      </AdminCard>
+
+      <LibertiMapCard />
+    </div>
   );
 }
 
