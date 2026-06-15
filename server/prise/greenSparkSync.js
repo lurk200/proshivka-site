@@ -74,9 +74,35 @@ export function findStockForModel(modelLabel, stock = null) {
   if (!tokens.length) return [];
 
   return items.filter(p => {
-    const name = (p.name || '').toLowerCase();
+    // Support both old GS format (p.name) and new normalized format (p.title)
+    const name = ((p.name || p.title) || '').toLowerCase();
     return tokens.every(t => name.includes(t));
   });
+}
+
+/**
+ * Merge new normalized records into supplier-stock.json.
+ * Replaces existing records for the same (supplierId, model) pair.
+ */
+export function mergeIntoStock(newRecords) {
+  if (!newRecords?.length) return;
+  const existing = readStock();
+
+  // For new-format records (have supplierId + model): replace by (supplierId, model)
+  const firstNew = newRecords[0];
+  if (firstNew.supplierId && firstNew.model) {
+    const { supplierId, model } = firstNew;
+    const filtered = existing.filter(
+      r => !(r.supplierId === supplierId && r.model === model),
+    );
+    const merged = [...filtered, ...newRecords];
+    writeFileSync(STOCK_FILE, JSON.stringify(merged, null, 2));
+  } else {
+    // Old GS format: de-duplicate by id
+    const seen = new Set(newRecords.map(r => r.id).filter(Boolean));
+    const oldKept = existing.filter(r => !r.id || !seen.has(r.id));
+    writeFileSync(STOCK_FILE, JSON.stringify([...oldKept, ...newRecords], null, 2));
+  }
 }
 
 /** Resolve a flat-ref Nuxt data array value */

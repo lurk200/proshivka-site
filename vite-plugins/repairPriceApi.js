@@ -4,7 +4,8 @@ import {
   getRepairPriceSettings,
   saveRepairSettings,
 } from '../server/prise/repairQuoteService.js';
-import { runSync, getSyncLog, readStock, buildSupplierQuery, findStockForModel } from '../server/prise/greenSparkSync.js';
+import { runSync, getSyncLog, readStock, buildSupplierQuery, findStockForModel, mergeIntoStock } from '../server/prise/greenSparkSync.js';
+import { syncLibertiModel } from '../server/prise/libertiProvider.js';
 import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
 import {
   listServices,
@@ -123,13 +124,38 @@ function registerRepairPriceApi(server) {
           }
         }
 
-        // ── Supplier parts for model (Green Spark stock lookup) ───────────
+        // ── Supplier parts for model (lazy sync from liberti + GS cache) ──
         if (pathname === '/api/repair-price/supplier-parts') {
           const label = url.searchParams.get('label')?.trim() || '';
+          const refresh = url.searchParams.get('refresh') === '1';
           if (!label) return sendJson(res, 400, { error: 'label required' });
+
           const supplierQuery = buildSupplierQuery(label);
-          const items = findStockForModel(label);
-          return sendJson(res, 200, { supplierQuery, items, stockTotal: readStock().length });
+          let items = findStockForModel(label);
+          let syncMeta = null;
+
+          // If empty or forced refresh: lazy-sync from liberti SSR
+          if ((items.length === 0 || refresh)) {
+            const libertiSup = listSuppliers().find(s => s.dataSource?.type === 'ssr_page');
+            if (libertiSup) {
+              try {
+                const result = await syncLibertiModel(
+                  label,
+                  libertiSup.id,
+                  libertiSup.dataSource?.cityId ?? null,
+                );
+                syncMeta = { slug: result.slug, cityId: result.cityId, count: result.products.length, error: result.error };
+                if (result.products.length > 0) {
+                  mergeIntoStock(result.products);
+                  items = findStockForModel(label);
+                }
+              } catch (e) {
+                syncMeta = { error: e.message };
+              }
+            }
+          }
+
+          return sendJson(res, 200, { supplierQuery, items, stockTotal: readStock().length, syncMeta });
         }
 
         // ── Public services catalog ────────────────────────────────────────
