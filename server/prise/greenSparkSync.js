@@ -45,6 +45,40 @@ export function readStock() {
   try { return JSON.parse(readFileSync(STOCK_FILE, 'utf8')); } catch { return []; }
 }
 
+/**
+ * Strip hardware model codes from a display label to get a clean supplier search query.
+ *   "Samsung Galaxy S25 Ultra SM-S938B" → "Samsung Galaxy S25 Ultra"
+ *   "iPhone 11 A2221"                   → "iPhone 11"
+ *   "Redmi Note 13 Pro"                 → "Redmi Note 13 Pro"   (unchanged)
+ */
+export function buildSupplierQuery(label) {
+  return String(label || '')
+    .replace(/\bSM-[A-Z]\d{3,4}[A-Z0-9]?\b/gi, '')   // SM-S938B, SM-A546E
+    .replace(/\b(?:SCH|GT)-[A-Z]\d{3,4}\b/gi, '')      // SCH-xxx, GT-xxx
+    .replace(/\bA\d{4}\b/g, '')                          // A2221, A2342 (Apple)
+    .replace(/\bEB-[A-Z\d]+\b/gi, '')                    // EB-BG991ABY (battery)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Filter synced stock for products matching a model's commercial name.
+ * Strips tech codes before matching so SM-S938B doesn't break lookup.
+ */
+export function findStockForModel(modelLabel, stock = null) {
+  const items = stock ?? readStock();
+  const query = buildSupplierQuery(modelLabel);
+  if (!query || query.length < 3) return [];
+
+  const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length >= 2);
+  if (!tokens.length) return [];
+
+  return items.filter(p => {
+    const name = (p.name || '').toLowerCase();
+    return tokens.every(t => name.includes(t));
+  });
+}
+
 /** Resolve a flat-ref Nuxt data array value */
 function resolve(data, v) {
   if (typeof v !== 'number') return v;

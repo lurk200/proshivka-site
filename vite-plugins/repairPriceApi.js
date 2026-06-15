@@ -4,7 +4,7 @@ import {
   getRepairPriceSettings,
   saveRepairSettings,
 } from '../server/prise/repairQuoteService.js';
-import { runSync, getSyncLog, readStock } from '../server/prise/greenSparkSync.js';
+import { runSync, getSyncLog, readStock, buildSupplierQuery, findStockForModel } from '../server/prise/greenSparkSync.js';
 import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
 import {
   listServices,
@@ -121,6 +121,15 @@ function registerRepairPriceApi(server) {
           } catch {
             return sendJson(res, 503, { error: 'Не удалось проверить наличие. Попробуйте позже.', code: 'SERVICE_UNAVAILABLE' });
           }
+        }
+
+        // ── Supplier parts for model (Green Spark stock lookup) ───────────
+        if (pathname === '/api/repair-price/supplier-parts') {
+          const label = url.searchParams.get('label')?.trim() || '';
+          if (!label) return sendJson(res, 400, { error: 'label required' });
+          const supplierQuery = buildSupplierQuery(label);
+          const items = findStockForModel(label);
+          return sendJson(res, 200, { supplierQuery, items, stockTotal: readStock().length });
         }
 
         // ── Public services catalog ────────────────────────────────────────
