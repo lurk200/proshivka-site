@@ -34,18 +34,28 @@ const FETCH_HEADERS = {
 
 /**
  * Canonical key for map lookup.
- *   "Samsung Galaxy S26+"   → "samsung galaxy s26 plus"
- *   "Apple iPhone 11 A2221" → "apple iphone 11"
- *   "Xiaomi Redmi Note 13 Pro SM-S938B" → "xiaomi redmi note 13 pro"
+ *   "Samsung Galaxy S26+"          → "samsung galaxy s26 plus"
+ *   "Apple iPhone 11 A2221"        → "apple iphone 11"
+ *   "Samsung Galaxy S25 Ultra SM-S938B" → "samsung galaxy s25 ultra"
  */
 export function normalizeModelKey(name) {
-  return buildSupplierQuery(name)     // strip SM-XXXX, A1234, EB-xxx
+  return buildSupplierQuery(name)              // strips SM-XXX (pattern), A1234, EB-xxx
+    .replace(/\bSM-[A-Z0-9]{2,12}\b/gi, '')   // broader Samsung codes: SM-G991BZKDEUC etc.
     .toLowerCase()
-    .replace(/\+/g, ' plus')          // S26+ → s26 plus
-    .replace(/[^\w\s]/g, ' ')         // remove other specials
+    .replace(/\+/g, ' plus')                   // S26+ → s26 plus
+    .replace(/[^\w\s]/g, ' ')                  // remove remaining specials
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+/**
+ * Variant suffixes that distinguish separate product lines.
+ * A map key that has one of these but the query doesn't → not the same model.
+ */
+const VARIANT_SUFFIXES = new Set([
+  'ultra', 'plus', 'pro', 'max', 'fe', 'edge', 'mini', 'lite',
+  'neo', 'fold', 'flip', '5g', '4g', 'lte',
+]);
 
 export function readModelMap() {
   if (!existsSync(MAP_FILE)) return {};
@@ -178,7 +188,14 @@ export function getMapStats() {
 /**
  * Resolve a model label to its real liberti URL using the map.
  *
- * Returns { url, name, brand, fromMap, guessed } or null if no slug either.
+ * Matching rules (in order):
+ *   1. Exact normalized-key match.
+ *   2. Token-set match: all query tokens present as whole words in the key,
+ *      AND the key must not have variant suffixes absent from the query
+ *      (prevents "Samsung Galaxy S25" → S25 Ultra / S25 FE false matches).
+ *   3. Ambiguous (>1 candidate) → null + console.warn, never guesses.
+ *
+ * Returns { url, name, brand, fromMap, guessed } or null.
  */
 export function resolveModelUrl(modelLabel) {
   const map = readModelMap();
@@ -188,22 +205,35 @@ export function resolveModelUrl(modelLabel) {
   // 1. Exact key match
   if (map[key]) return { ...map[key], fromMap: true, guessed: false };
 
-  // 2. Token-subset match (input tokens all present in map key)
-  const tokens = key.split(/\s+/).filter(t => t.length >= 2);
-  if (!tokens.length) return null;
+  // 2. Strict token-set match
+  const qTokens = key.split(/\s+/).filter(Boolean);
+  if (!qTokens.length) return null;
+  const qSet = new Set(qTokens);
 
-  const candidates = Object.entries(map).filter(([k]) =>
-    tokens.every(t => k.includes(t)),
-  );
+  const candidates = [];
+  for (const [k, v] of Object.entries(map)) {
+    const kTokens = k.split(/\s+/).filter(Boolean);
+    const kSet = new Set(kTokens);
+
+    // All query tokens must match as whole words in the map key
+    if (!qTokens.every(t => kSet.has(t))) continue;
+
+    // Reject if the key has variant suffixes not present in the query.
+    // This prevents "s25" (base) from matching "s25 ultra" / "s25 fe" / "s25 5g".
+    const extraInKey = kTokens.filter(t => !qSet.has(t));
+    if (extraInKey.some(t => VARIANT_SUFFIXES.has(t))) continue;
+
+    candidates.push([k, v]);
+  }
 
   if (candidates.length === 1) {
     return { ...candidates[0][1], fromMap: true, guessed: false };
   }
 
   if (candidates.length > 1) {
-    // Pick shortest key = fewest extra words = most specific match
-    candidates.sort((a, b) => a[0].length - b[0].length);
-    return { ...candidates[0][1], fromMap: true, guessed: false };
+    const names = candidates.map(([k]) => k).join('; ');
+    console.warn(`[liberti] ambiguous map match for "${modelLabel}": ${names}`);
+    return null;
   }
 
   return null;
