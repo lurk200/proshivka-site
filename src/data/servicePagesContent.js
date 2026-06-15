@@ -32,12 +32,12 @@ export function createDefaultServicePages() {
       ],
     },
     glassReplacement: {
-      seoTitle: 'Лаборатория восстановления дисплеев',
+      seoTitle: 'Переклейка стекла на смартфоне | ПРОШИВКА',
       seoDesc:
         'Восстановление оригинальных OLED/AMOLED дисплеев. Переклейка разбитого стекла с сохранением родной матрицы, True Tone и Face ID.',
       heroBadge: 'OLED RESTORATION LAB',
-      heroTitle: 'Лаборатория',
-      heroTitleAccent: 'восстановления дисплеев',
+      heroTitle: 'Переклейка стекла',
+      heroTitleAccent: 'OLED-матрицы',
       heroDescription:
         'Сохраняем оригинальную заводскую OLED/AMOLED матрицу вашего устройства, ювелирно заменяя только поврежденное верхнее стекло.',
     },

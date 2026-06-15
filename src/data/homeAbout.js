@@ -2,6 +2,7 @@ import { buildYandexWidgetUrl, PROSHIVKA_MAP } from '../utils/yandexMap';
 
 /** Секция «О нас» на главной странице. */
 export const HOME_ABOUT = {
+  eyebrow: '',
   title: 'О нас',
   subtitle:
     'Лаборатория восстановления устройств: диагностика, ремонт и прозрачные условия работы. Приезжайте в сервис или свяжитесь заранее — подскажем по срокам.',

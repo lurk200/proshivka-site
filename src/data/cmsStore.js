@@ -69,6 +69,8 @@ function mergeMainHome(saved) {
     bannersSection: {
       ...base.bannersSection,
       ...saved.bannersSection,
+      eyebrow: saved.bannersSection?.eyebrow ?? base.bannersSection.eyebrow,
+      cardEyebrow: saved.bannersSection?.cardEyebrow ?? base.bannersSection.cardEyebrow,
       gradient: {
         ...base.bannersSection.gradient,
         ...saved.bannersSection?.gradient,
@@ -77,6 +79,7 @@ function mergeMainHome(saved) {
     about: {
       ...base.about,
       ...saved.about,
+      eyebrow: saved.about?.eyebrow ?? base.about.eyebrow,
       servicePhoto: { ...base.about.servicePhoto, ...saved.about?.servicePhoto },
       yandexMap: normalizeYandexMap(saved.about?.yandexMap, base.about.yandexMap),
     },

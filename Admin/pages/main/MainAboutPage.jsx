@@ -15,6 +15,13 @@ export default function MainAboutPage() {
       <PageHeader title="О нас" description="Секция «О нас» на главной: текст, фото и карта." />
       <AdminCard>
         <div className="space-y-5">
+          <Field label="Ярлык над заголовком (eyebrow)" hint="Оставьте пустым — ярлык не отображается">
+            <Input
+              value={about.eyebrow ?? ''}
+              onChange={(e) => setAbout({ eyebrow: e.target.value })}
+              placeholder="Пусто — ярлык скрыт"
+            />
+          </Field>
           <Field label="Заголовок">
             <Input value={about.title} onChange={(e) => setAbout({ title: e.target.value })} />
           </Field>

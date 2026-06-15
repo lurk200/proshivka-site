@@ -46,7 +46,7 @@ export default function BatteryReplacementPage() {
           <Reveal>
             <Link to="/" className="inline-flex items-center text-[13px] font-mono text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors group mb-12">
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              НАЗАД В ЛАБОРАТОРИЮ
+              НА ГЛАВНУЮ
             </Link>
           </Reveal>
 

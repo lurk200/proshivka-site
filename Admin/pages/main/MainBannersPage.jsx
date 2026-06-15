@@ -87,12 +87,22 @@ export default function MainBannersPage() {
 
       <AdminCard className="mb-6">
         <div className="space-y-4">
-          <Field label="Подпись секции">
+          <Field label="Ярлык секции (над описанием)" hint="Пусто — ярлык не отображается">
             <Input
-              value={draft.bannersSection.eyebrow}
+              value={draft.bannersSection.eyebrow ?? ''}
               onChange={(e) =>
                 setDraft({ ...draft, bannersSection: { ...draft.bannersSection, eyebrow: e.target.value } })
               }
+              placeholder="Пусто — ярлык скрыт"
+            />
+          </Field>
+          <Field label="Ярлык карточки (над названием услуги)" hint="Общий для всех карточек. Пусто — ярлык не отображается">
+            <Input
+              value={draft.bannersSection.cardEyebrow ?? ''}
+              onChange={(e) =>
+                setDraft({ ...draft, bannersSection: { ...draft.bannersSection, cardEyebrow: e.target.value } })
+              }
+              placeholder="Пусто — ярлык скрыт"
             />
           </Field>
           <Field label="Описание секции">

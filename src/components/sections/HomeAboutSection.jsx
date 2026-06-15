@@ -25,9 +25,11 @@ export default function HomeAboutSection({ company }) {
   return (
     <section id="about" className="w-full min-w-0 pt-10 sm:pt-14 md:pt-16 border-t border-[var(--border-subtle)]">
       <Reveal className="mb-8 md:mb-10 max-w-2xl">
-        <span className="text-[#84CC16] text-[10px] font-mono uppercase tracking-widest block mb-3">
-          О лаборатории
-        </span>
+        {about.eyebrow && (
+          <span className="text-[#84CC16] text-[10px] font-mono uppercase tracking-widest block mb-3">
+            {about.eyebrow}
+          </span>
+        )}
         <h2 className="text-[clamp(1.5rem,4vw,2.25rem)] font-medium text-[var(--text-primary)] tracking-tight mb-3">
           {about.title}
         </h2>

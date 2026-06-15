@@ -133,7 +133,7 @@ export default function ServicePageTemplate({
           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-8">
             <Link to="/" className="inline-flex items-center text-[13px] font-mono text-[var(--text-muted)] hover:text-[#84CC16] transition-colors group">
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              НАЗАД В ЛАБОРАТОРИЮ
+              НА ГЛАВНУЮ
             </Link>
           </motion.div>
 

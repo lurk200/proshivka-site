@@ -27,7 +27,7 @@ function resolveBannerGradientVars(gradient = {}) {
   };
 }
 
-function ShortBannerCard({ banner, index }) {
+function ShortBannerCard({ banner, index, cardEyebrow }) {
   return (
     <li className="home-banner-item min-w-0 list-none snap-start">
       <Reveal delay={index * 40} immediate className="block h-full w-full min-w-0">
@@ -51,9 +51,11 @@ function ShortBannerCard({ banner, index }) {
           <div className="banner-card-fade absolute inset-0 z-[3] pointer-events-none" />
 
           <div className="relative z-10 flex h-full min-h-0 flex-col justify-end p-3 sm:p-4 md:p-5">
-            <span className="mb-1 block font-mono text-[9px] uppercase tracking-widest text-[#84CC16] md:text-[10px]">
-              Лаборатория
-            </span>
+            {cardEyebrow && (
+              <span className="mb-1 block font-mono text-[9px] uppercase tracking-widest text-[#84CC16] md:text-[10px]">
+                {cardEyebrow}
+              </span>
+            )}
             <h2 className="mb-1.5 text-[13px] font-medium leading-snug tracking-tight text-[var(--text-primary)] sm:text-[14px] md:text-[16px] lg:text-[17px]">
               {banner.title}
             </h2>
@@ -105,13 +107,14 @@ export default function HomeServiceBanners() {
       <div className="home-banners-scroll -mx-4 px-4 md:mx-0 md:px-0">
         <ul
           className="home-banners-grid m-0 flex list-none gap-3 p-0 pb-1 sm:gap-4 md:grid md:grid-cols-3 md:gap-4 lg:gap-5 xl:grid-cols-5"
-          aria-label="Услуги лаборатории"
+          aria-label="Услуги сервисного центра"
         >
           {banners.map((banner, index) => (
             <ShortBannerCard
               key={banner.id}
               banner={banner}
               index={index}
+              cardEyebrow={bannersSection.cardEyebrow}
             />
           ))}
         </ul>
