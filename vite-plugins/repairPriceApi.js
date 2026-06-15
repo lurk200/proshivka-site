@@ -6,6 +6,7 @@ import {
 } from '../server/prise/repairQuoteService.js';
 import { runSync, getSyncLog, readStock, buildSupplierQuery, findStockForModel, mergeIntoStock } from '../server/prise/greenSparkSync.js';
 import { syncLibertiModel } from '../server/prise/libertiProvider.js';
+import { buildModelMap, getMapStats, getMapBuildLog, LIBERTI_BRANDS } from '../server/prise/libertiModelMap.js';
 import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
 import {
   listServices,
@@ -144,7 +145,7 @@ function registerRepairPriceApi(server) {
                   libertiSup.id,
                   libertiSup.dataSource?.cityId ?? null,
                 );
-                syncMeta = { slug: result.slug, cityId: result.cityId, count: result.products.length, error: result.error };
+                syncMeta = { slug: result.slug, cityId: result.cityId, count: result.products.length, error: result.error, guessed: result.guessed };
                 if (result.products.length > 0) {
                   mergeIntoStock(result.products);
                   items = findStockForModel(label);
@@ -407,6 +408,27 @@ function registerRepairPriceApi(server) {
         if (pathname === '/api/admin/supplier-stock') {
           if (!requireAdmin(req, res)) return;
           return sendJson(res, 200, { items: readStock() });
+        }
+
+        // ── Liberti model map ──────────────────────────────────────────────
+        if (pathname === '/api/admin/liberti-model-map') {
+          if (!requireAdmin(req, res)) return;
+          if (req.method === 'GET') {
+            const stats = getMapStats();
+            const { running, log } = getMapBuildLog();
+            return sendJson(res, 200, { stats, running, log });
+          }
+          if (req.method === 'POST') {
+            // ?brands=apple,samsung  or no param = all brands
+            const brandsParam = url.searchParams.get('brands');
+            const brands = brandsParam
+              ? brandsParam.split(',').map(b => b.trim()).filter(b => LIBERTI_BRANDS.includes(b))
+              : LIBERTI_BRANDS;
+            // Run in background — can take several minutes for all brands
+            buildModelMap(brands).catch(() => {});
+            return sendJson(res, 202, { status: 'started', brands });
+          }
+          res.statusCode = 405; return res.end();
         }
 
         next();

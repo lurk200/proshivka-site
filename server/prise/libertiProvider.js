@@ -4,6 +4,7 @@
  */
 
 import { buildSupplierQuery } from './greenSparkSync.js';
+import { resolveModelUrl } from './libertiModelMap.js';
 
 const BASE_URL = 'https://liberti.ru';
 const CITY_COOKIE = 'BITRIX_SM_SALE_LOCATION';
@@ -183,26 +184,38 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
 
 /**
  * Fetch and parse a liberti model page.
+ * URL is resolved from the model map; falls back to buildLibertiSlug if not mapped yet.
  * Returns normalized product records (Block 4 format).
  */
 export async function syncLibertiModel(modelLabel, supplierId, configuredCityId = null) {
-  const slug = buildLibertiSlug(modelLabel);
-  if (!slug || slug.length < 3) return { slug: null, products: [], error: 'bad_slug' };
-
   const cityId = await discoverCityId(configuredCityId);
-  const url = `${BASE_URL}/models/${slug}/`;
+
+  // Try map first (real Bitrix URLs, handles + and other specials)
+  const mapEntry = resolveModelUrl(modelLabel);
+  let modelUrl, slug, guessed;
+
+  if (mapEntry) {
+    slug = mapEntry.url.replace(/^\/models\//, '').replace(/\/$/, '');
+    modelUrl = `${BASE_URL}${mapEntry.url}`;
+    guessed = false;
+  } else {
+    slug = buildLibertiSlug(modelLabel);
+    if (!slug || slug.length < 3) return { slug: null, products: [], error: 'bad_slug', cityId, guessed: true };
+    modelUrl = `${BASE_URL}/models/${slug}/`;
+    guessed = true;
+    console.warn(`[liberti] slug guessed for "${modelLabel}" → ${slug} (run map rebuild to fix)`);
+  }
 
   try {
-    const html = await fetchPage(url, cityId);
+    const html = await fetchPage(modelUrl, cityId);
 
-    // Check for 404 page
-    if (html.includes('404') && html.includes('не найден') || !html.includes('Артикул:')) {
-      return { slug, products: [], error: null, cityId };
+    if ((html.includes('404') && html.includes('не найден')) || !html.includes('Артикул:')) {
+      return { slug, products: [], error: null, cityId, guessed };
     }
 
     const products = parseLibertiProducts(html, supplierId, slug);
-    return { slug, products, error: null, cityId };
+    return { slug, products, error: null, cityId, guessed };
   } catch (err) {
-    return { slug, products: [], error: err.message, cityId };
+    return { slug, products: [], error: err.message, cityId, guessed };
   }
 }
