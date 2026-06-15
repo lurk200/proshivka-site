@@ -10,6 +10,7 @@
  */
 
 import { createRequire } from 'module';
+import { execSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -174,10 +175,22 @@ export async function runSync() {
     const require = createRequire(import.meta.url);
     const { chromium } = require('playwright');
 
-    const browser = await chromium.launch({ headless: true });
+    // Auto-install browser if binary is missing (e.g. after fresh deploy)
+    let browser;
+    try {
+      browser = await chromium.launch({ headless: true });
+    } catch (launchErr) {
+      if (launchErr.message?.includes("Executable doesn't exist")) {
+        writeSyncLog({ status: 'running', error: null, _installing: true });
+        execSync('npx playwright install chromium --with-deps', { stdio: 'inherit', timeout: 120000 });
+        browser = await chromium.launch({ headless: true });
+      } else {
+        throw launchErr;
+      }
+    }
     const allProducts = [];
 
-    try {
+    try { // browser cleanup block
       const context = await browser.newContext({
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
       });
