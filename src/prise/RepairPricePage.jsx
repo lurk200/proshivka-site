@@ -14,7 +14,6 @@ import { DesktopCta } from './components/StickyMobileCta';
 import PartQualityGuide from './components/PartQualityGuide';
 import BrandRepairGuide from './components/BrandRepairGuide';
 import ServiceCatalog from './components/ServiceCatalog';
-import ModelServiceCatalog from './components/ModelServiceCatalog';
 import { useRepairPriceSearch } from './hooks/useRepairPriceSearch';
 
 import { HOME_ABOUT } from '../data/homeAbout';
@@ -169,15 +168,7 @@ export default function RepairPricePage() {
                   ) : null}
                 </div>
 
-                {/* Full service catalog for selected model */}
-                {selectedModel && (
-                  <ModelServiceCatalog
-                    modelLabel={selectedModel}
-                    contacts={company?.contacts}
-                  />
-                )}
-
-                {(showCta || selectedModel) ? (
+                {showCta ? (
                   <div className="mt-10 hidden md:block">
                     <DesktopCta
                       phone={company.phone}
