@@ -131,14 +131,17 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
   const segments = html.split(/Артикул:/i);
 
   for (let i = 1; i < segments.length; i++) {
-    const seg = segments[i];
-    const prevSeg = segments[i - 1];
+    // Normalize &nbsp; to space so price/text regexes work reliably.
+    // Liberti writes prices as "9890&nbsp;₽" which breaks \s* matchers.
+    const seg = segments[i].replace(/&nbsp;/g, ' ');
+    const prevSeg = segments[i - 1].replace(/&nbsp;/g, ' ');
 
-    // SKU: first alphanumeric token
+    // SKU: first alphanumeric token after "Артикул: "
     const sku = seg.match(/^\s*([A-Za-z0-9][A-Za-z0-9_-]{2,})/)?.[1]?.trim() || null;
 
-    // Price: number before ₽ or "р."
-    const priceMatch = seg.match(/(\d[\d\s]{0,8})\s*[₽р]/);
+    // Price: first number followed by ₽ (handles "9890 ₽" after &nbsp; normalization).
+    // Take the FIRST price in the block = wholesale/purchase price.
+    const priceMatch = seg.match(/(\d[\d\s]{0,8})\s*₽/);
     const price = parsePrice(priceMatch?.[1]);
 
     // Stock status
@@ -154,11 +157,17 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
       null;
     const partType = mapPartType(typeRaw);
 
-    // Title and URL: the <a href="...">...</a> leading into this product
-    // It lives in the PREVIOUS segment (before "Артикул:")
+    // Title and URL live in the PREVIOUS segment (before "Артикул:").
+    // Liberti wraps the product name in <span> inside the anchor:
+    //   <a href="/product.html"><span>Product Name</span></a>
+    // The old regex expected bare text; updated to allow optional <span> wrapper.
     const linkMatch =
-      prevSeg.match(/href="(\/[^"]+\.html)"[^>]*>([^<]{15,300})<\/a>/i) ||
-      prevSeg.match(/href="(\/[^"]+\.html)"[^>]*>\s*<[^>]+>([^<]{15,300})<\/[^>]+>\s*<\/a>/i);
+      // <a href="..."><span>text</span></a>
+      prevSeg.match(/href="(\/[^"]+\.html)"[^>]*>\s*<span[^>]*>([^<]{5,300})<\/span>/i) ||
+      // <a href="..."><any-tag>text</any-tag></a>
+      prevSeg.match(/href="(\/[^"]+\.html)"[^>]*>\s*<[^>]+>([^<]{5,300})<\/[^>]+>\s*<\/a>/i) ||
+      // <a href="...">text</a>  (plain text, no wrapper)
+      prevSeg.match(/href="(\/[^"]+\.html)"[^>]*>([^<]{5,300})<\/a>/i);
     const urlPath = linkMatch?.[1] || null;
     const title = linkMatch?.[2]?.replace(/\s+/g, ' ').trim() || null;
 
