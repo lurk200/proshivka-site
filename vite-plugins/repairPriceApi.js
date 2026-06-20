@@ -8,6 +8,7 @@ import { runSync, getSyncLog, readStock, buildSupplierQuery, findStockForModel, 
 import { syncLibertiModel } from '../server/prise/libertiProvider.js';
 import { buildModelMap, getMapStats, getMapBuildLog, LIBERTI_BRANDS } from '../server/prise/libertiModelMap.js';
 import { computeSimplePrice } from '../src/data/repairCategorySettings.js';
+import { repairTypeLabel, ALL_KNOWN_KINDS } from '../server/prise/partClassifier.js';
 import {
   listServices,
   getService,
@@ -136,6 +137,104 @@ async function resolveSupplierItemsForModel(label, refresh = false) {
   return { items, syncMeta };
 }
 
+// Build reverse map: "Замена дисплея" → "display"
+const REPAIR_TYPE_TO_KIND = Object.fromEntries(
+  ALL_KNOWN_KINDS.map(k => [repairTypeLabel(k), k]),
+);
+
+// Canonical display order for merged categories
+const CANONICAL_KIND_ORDER = [
+  'display', 'battery', 'port', 'camera', 'camera-glass',
+  'back-glass', 'housing', 'ear-speaker', 'speaker', 'microphone',
+  'face-id', 'button', 'vibration',
+];
+
+// Simplified repair time per kind (mirrors taggsmProvider DEFAULT_REPAIR_TIMES)
+const LIBERTI_REPAIR_TIMES = {
+  display:        '1–2 часа',   battery:       '40–60 мин',
+  port:           '1–2 часа',   camera:        '1–2 часа',
+  'camera-glass': '30–60 мин',  'back-glass':  '1–2 часа',
+  housing:        '2–3 часа',   'ear-speaker': '30–60 мин',
+  speaker:        '30–60 мин',  microphone:    '30–60 мин',
+  vibration:      '30–60 мин',  button:        '40–60 мин',
+  'face-id':      '2–3 часа',
+};
+
+/** Derive a customer-facing quality label from a liberti product title. */
+function getLibertiQualityLabel(title) {
+  if (/\bOR\s+SP\b|100%\s+OR\b|оригинал/i.test(String(title || ''))) return 'Оригинал';
+  return 'Совместимый';
+}
+
+/**
+ * Enriches a TagGSM repair result with Liberti data for partTypes not covered by TagGSM.
+ * TagGSM data is never overridden — Liberti fills gaps only.
+ * Returns the same payload shape consumed by RepairResultsPanel.
+ */
+async function enrichWithLibertiData(payload, label, settings) {
+  if (!payload?.categories) return payload;
+
+  // Which partType kinds does TagGSM already cover?
+  const coveredKinds = new Set(
+    payload.categories.map(cat => REPAIR_TYPE_TO_KIND[cat.repairType]).filter(Boolean),
+  );
+
+  const { items } = await resolveSupplierItemsForModel(label, false);
+  if (!items.length) return payload;
+
+  // Per uncovered partType: pick the best available item (in_stock → cheapest)
+  const priority = s => ({ in_stock: 0, low: 1, preorder: 2, out: 3 }[s] ?? 4);
+  const bestByKind = new Map();
+  for (const item of items) {
+    const kind = item.partType;
+    if (!kind || coveredKinds.has(kind)) continue;
+    const cur = bestByKind.get(kind);
+    const isBetter = !cur ||
+      priority(item.stockStatus) < priority(cur.stockStatus) ||
+      (priority(item.stockStatus) === priority(cur.stockStatus) &&
+       Number(item.price ?? Infinity) < Number(cur.price ?? Infinity));
+    if (isBetter) bestByKind.set(kind, item);
+  }
+
+  if (!bestByKind.size) return payload;
+
+  const catSettings = settings?.categorySettings ?? {};
+  const libertiCategories = [];
+
+  for (const [kind, item] of bestByKind) {
+    if (!item.price || item.stockStatus === 'out') continue;
+    const clientPrice = computeSimplePrice(Number(item.price), kind, catSettings);
+    if (!clientPrice) continue;
+    const rt = LIBERTI_REPAIR_TIMES[kind] ?? '1–2 часа';
+    const ql = getLibertiQualityLabel(item.title);
+    libertiCategories.push({
+      repairType: repairTypeLabel(kind),
+      repairTime: rt,
+      options: [{
+        id: `liberti-${kind}`,
+        partType: ql,
+        qualityLabel: ql,
+        variant: ql,
+        totalPrice: clientPrice,
+        inStock: item.stockStatus === 'in_stock' || item.stockStatus === 'low',
+        repairTime: rt,
+      }],
+    });
+  }
+
+  if (!libertiCategories.length) return payload;
+
+  // Merge and sort in canonical order
+  const merged = [...payload.categories, ...libertiCategories];
+  merged.sort((a, b) => {
+    const ia = CANONICAL_KIND_ORDER.indexOf(REPAIR_TYPE_TO_KIND[a.repairType] ?? '');
+    const ib = CANONICAL_KIND_ORDER.indexOf(REPAIR_TYPE_TO_KIND[b.repairType] ?? '');
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+
+  return { ...payload, categories: merged };
+}
+
 function registerRepairPriceApi(server) {
   server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url, 'http://localhost');
@@ -173,9 +272,13 @@ function registerRepairPriceApi(server) {
           const sid = url.searchParams.get('sessionId') || null;
           if (!model) return sendJson(res, 400, { error: 'Укажите модель устройства', code: 'MISSING_MODEL' });
           try {
-            const payload = await getRepairQuote(model, label);
+            let payload = await getRepairQuote(model, label);
             if (!payload) return sendJson(res, 404, { error: 'Запчасть не найдена в наличии в Ставрополе', code: 'NOT_IN_STOCK' });
             try { logSearch(label || model, sid); } catch {}
+            // Enrich with Liberti for partTypes not covered by TagGSM (fire-and-forget on error)
+            if (label) {
+              try { payload = await enrichWithLibertiData(payload, label, getRepairPriceSettings()); } catch {}
+            }
             return sendJson(res, 200, payload);
           } catch {
             return sendJson(res, 503, { error: 'Не удалось проверить наличие. Попробуйте позже.', code: 'SERVICE_UNAVAILABLE' });

@@ -184,3 +184,6 @@ export function extractVariantHint(title) {
 export function repairTypeLabel(category) {
   return REPAIR_TYPE_LABELS[category] ?? category;
 }
+
+/** All known part kinds in display order */
+export const ALL_KNOWN_KINDS = Object.keys(REPAIR_TYPE_LABELS);

@@ -85,23 +85,54 @@ async function fetchPage(url, cityCtx) {
   return res.text();
 }
 
-/** Map liberti "Тип:" string to internal partType. */
-function mapPartType(typeStr) {
+/**
+ * Map a liberti product to a partType using TITLE (primary) + "Тип:" field (fallback).
+ *
+ * Why title-first: Liberti's "Тип:" field is often wrong (e.g., a display labelled
+ * as "Задняя крышка", a battery as "Защитное стекло").  The product title is reliable
+ * because it's written by the supplier for customer display and always starts with the
+ * part name: "LCD дисплей…", "Аккумулятор…", "Задняя крышка…", "Защитное стекло…".
+ *
+ * Screen protectors / OCA film are accessories — never repair-category parts.
+ * They are excluded (return null) to prevent e.g. a 139 ₽ film appearing as
+ * "Дисплей" alongside 9 890–15 990 ₽ display modules.
+ */
+export function mapPartType(typeStr, title = '') {
+  const tl = String(title || '').toLowerCase();
+
+  // ── 1. Accessory exclusion by title (always trump everything) ──────────────
+  // "Защитное стекло", "G+OCA PRO стекло для переклейки", плёнки — excluded.
+  if (/защит.*стекл|стекло.*(oca|для\s*перекл)|oca.*стекл|плёнк|пленк/i.test(tl)) return null;
+
+  // ── 2. Title-first classification (first content word = part type) ─────────
+  if (/^(?:lcd|amoled|дисплей|экран)/i.test(tl))  return 'display';
+  if (/^(?:аккумул|акб)/i.test(tl))               return 'battery';
+  if (/^задн.*крышк|^крышк/i.test(tl))            return 'back-glass';
+  if (/^(?:стекло|линза)\s*камер/i.test(tl))       return 'camera-glass';
+  if (/^камер/i.test(tl))                          return 'camera';
+  if (/^(?:нижн.*плат|шлейф.*зарядк|разъем)/i.test(tl)) return 'port';
+  if (/^(?:динамик|полифон)/i.test(tl))            return 'speaker';
+  if (/^слухов/i.test(tl))                         return 'ear-speaker';
+  if (/^микрофон/i.test(tl))                       return 'microphone';
+  if (/^вибро/i.test(tl))                          return 'vibration';
+
+  // ── 3. Fallback to "Тип:" field — but reject screen-protector types ────────
   if (!typeStr) return null;
   const t = typeStr.toLowerCase();
-  if (/дисплей|экран|матриц|стекло.и.oca|переклейк/i.test(t)) return 'display';
-  if (/акб|аккумулятор|батаре/i.test(t)) return 'battery';
+  if (/защит.*стекл|стекло.и.oca|oca|плёнк/i.test(t)) return null; // screen-protector
+  if (/дисплей|экран|матриц/i.test(t))          return 'display';
+  if (/акб|аккумулятор|батаре/i.test(t))        return 'battery';
   if (/нижн.*плат|разъем|зарядк|type.c|usb|lightning/i.test(t)) return 'port';
-  if (/стекло\s*камер|линза\s*камер/i.test(t)) return 'camera-glass';
-  if (/камер|объектив/i.test(t)) return 'camera';
+  if (/стекло\s*камер|линза\s*камер/i.test(t))  return 'camera-glass';
+  if (/камер|объектив/i.test(t))                return 'camera';
   if (/задн.*крышк|задн.*стекл|крышка/i.test(t)) return 'back-glass';
-  if (/корпус|рамка/i.test(t)) return 'housing';
-  if (/динамик|полифон/i.test(t)) return 'speaker';
-  if (/слухов|разговор/i.test(t)) return 'ear-speaker';
-  if (/микрофон/i.test(t)) return 'microphone';
-  if (/кнопк/i.test(t)) return 'button';
-  if (/вибро/i.test(t)) return 'vibration';
-  if (/face.id/i.test(t)) return 'face-id';
+  if (/корпус|рамка/i.test(t))                  return 'housing';
+  if (/динамик|полифон/i.test(t))               return 'speaker';
+  if (/слухов|разговор/i.test(t))               return 'ear-speaker';
+  if (/микрофон/i.test(t))                      return 'microphone';
+  if (/кнопк/i.test(t))                         return 'button';
+  if (/вибро/i.test(t))                         return 'vibration';
+  if (/face.id/i.test(t))                       return 'face-id';
   return null;
 }
 
@@ -144,13 +175,6 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
     const preorder = /Под\s+заказ/i.test(seg);
     const stockStatus = inStock ? 'in_stock' : lowStock ? 'low' : preorder ? 'preorder' : 'out';
 
-    // Part type from "Тип:" field (may be in either segment)
-    const typeRaw =
-      seg.match(/Тип:\s*([^\n<]{3,80})/i)?.[1]?.trim() ||
-      prevSeg.match(/Тип:\s*([^\n<]{3,80})/i)?.[1]?.trim() ||
-      null;
-    const partType = mapPartType(typeRaw);
-
     // Title and URL live in the PREVIOUS segment (before "Артикул:").
     // Liberti wraps the product name in <span> inside the anchor:
     //   <a href="/product.html"><span>Product Name</span></a>
@@ -166,6 +190,14 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
     const title = linkMatch?.[2]?.replace(/\s+/g, ' ').trim() || null;
 
     if (!price || !title) continue;
+
+    // Part type: title is PRIMARY (reliable), "Тип:" is fallback only.
+    // Liberti's Тип: field is often wrong (display tagged as "Задняя крышка", etc.)
+    const typeRaw =
+      seg.match(/Тип:\s*([^\n<]{3,80})/i)?.[1]?.trim() ||
+      prevSeg.match(/Тип:\s*([^\n<]{3,80})/i)?.[1]?.trim() ||
+      null;
+    const partType = mapPartType(typeRaw, title);
 
     products.push({
       supplierId,
