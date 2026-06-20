@@ -131,28 +131,62 @@ function registerRepairPriceApi(server) {
           const refresh = url.searchParams.get('refresh') === '1';
           if (!label) return sendJson(res, 400, { error: 'label required' });
 
-          const supplierQuery = buildSupplierQuery(label);
-          let items = findStockForModel(label);
-          let syncMeta = null;
+          const STOCK_TTL_MS = 6 * 60 * 60 * 1000; // re-sync after 6 hours
 
-          // If empty or forced refresh: lazy-sync from liberti SSR
-          if ((items.length === 0 || refresh)) {
-            const libertiSup = listSuppliers().find(s => s.dataSource?.type === 'ssr_page');
-            if (libertiSup) {
-              try {
-                const result = await syncLibertiModel(
-                  label,
-                  libertiSup.id,
-                  libertiSup.dataSource?.cityId ?? null,
+          const supplierQuery = buildSupplierQuery(label);
+          const libertiSup = listSuppliers().find(s => s.dataSource?.type === 'ssr_page');
+
+          // Items for this model by title-token match (GS + Liberti by title)
+          let items = findStockForModel(label);
+
+          // Trigger is PER MODEL: look at Liberti records specifically for this label.
+          // Global cache size is irrelevant — other models' records must not suppress sync.
+          const libertiCached = libertiSup
+            ? items.filter(p => p.supplierId === libertiSup.id)
+            : [];
+          const hasFreshLibertiItems = !refresh && libertiCached.some(
+            p => p.fetchedAt && Date.now() - new Date(p.fetchedAt).getTime() < STOCK_TTL_MS,
+          );
+
+          let syncMeta; // always filled — null removed
+
+          if (!libertiSup) {
+            syncMeta = { ran: false, reason: 'no-liberti-supplier' };
+          } else if (hasFreshLibertiItems) {
+            syncMeta = { ran: false, reason: 'fresh-cache', itemsForModel: libertiCached.length };
+          } else {
+            // Sync specifically for this model
+            try {
+              const result = await syncLibertiModel(
+                label,
+                libertiSup.id,
+                libertiSup.dataSource?.cityId ?? null,
+              );
+              syncMeta = {
+                ran: true,
+                slug: result.slug,
+                url: result.slug ? `https://liberti.ru/models/${result.slug}/` : null,
+                cityId: result.cityId,
+                count: result.products.length,
+                error: result.error ?? null,
+                guessed: result.guessed ?? false,
+              };
+              if (result.products.length > 0) {
+                mergeIntoStock(result.products);
+                // Precise fetch: Liberti by (supplierId, model slug) + non-Liberti by title
+                const allStock = readStock();
+                const libertiBySlug = allStock.filter(
+                  p => p.supplierId === libertiSup.id && p.model === result.slug,
                 );
-                syncMeta = { slug: result.slug, cityId: result.cityId, count: result.products.length, error: result.error, guessed: result.guessed };
-                if (result.products.length > 0) {
-                  mergeIntoStock(result.products);
-                  items = findStockForModel(label);
-                }
-              } catch (e) {
-                syncMeta = { error: e.message };
+                const otherItems = findStockForModel(label, allStock).filter(
+                  p => p.supplierId !== libertiSup.id,
+                );
+                items = [...libertiBySlug, ...otherItems];
+              } else {
+                items = findStockForModel(label); // GS-only fallback
               }
+            } catch (e) {
+              syncMeta = { ran: true, error: e.message };
             }
           }
 
