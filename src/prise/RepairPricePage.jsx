@@ -15,6 +15,7 @@ import PartQualityGuide from './components/PartQualityGuide';
 import BrandRepairGuide from './components/BrandRepairGuide';
 import ServiceCatalog from './components/ServiceCatalog';
 import { useRepairPriceSearch } from './hooks/useRepairPriceSearch';
+import { useRepairFeatures } from './hooks/useRepairFeatures';
 
 import { HOME_ABOUT } from '../data/homeAbout';
 
@@ -50,7 +51,10 @@ export default function RepairPricePage() {
   const { company } = cmsData;
   const mapUrl = cmsData.mainHome?.about?.yandexMap?.orgUrl ?? HOME_ABOUT.yandexMap.orgUrl;
   const search = useRepairPriceSearch();
-  const [tab, setTab] = useState('calculator');
+  const { features, loading: featuresLoading } = useRepairFeatures();
+  const calcEnabled = features?.modelCalculatorEnabled ?? false;
+  // Default to catalog if calculator is disabled; switch to calculator once enabled & loaded
+  const [tab, setTab] = useState('catalog');
   // Model selected in calculator — drives brand filter in catalog
   const [selectedModel, setSelectedModel] = useState('');
 
@@ -104,12 +108,15 @@ export default function RepairPricePage() {
           <PriceHero />
 
           <section className="relative z-10 mx-auto w-full max-w-3xl px-4 sm:px-6 lg:max-w-5xl">
-            <Reveal delay={60}>
-              <TabBar active={tab} onChange={setTab} />
-            </Reveal>
+            {/* Tab switcher — only shown when calculator feature is enabled */}
+            {!featuresLoading && calcEnabled && (
+              <Reveal delay={60}>
+                <TabBar active={tab} onChange={setTab} />
+              </Reveal>
+            )}
 
-            {/* ── Catalog tab ─────────────────────────────────────────────── */}
-            {tab === 'catalog' && (
+            {/* ── Catalog tab (always available; default when calc is off) ─── */}
+            {(tab === 'catalog' || !calcEnabled) && (
               <Reveal delay={80}>
                 <ServiceCatalog
                   phone={company?.phone}
@@ -127,8 +134,8 @@ export default function RepairPricePage() {
               </Reveal>
             )}
 
-            {/* ── Calculator tab ───────────────────────────────────────────── */}
-            {tab === 'calculator' && (
+            {/* ── Calculator tab — only when feature is enabled ────────────── */}
+            {calcEnabled && tab === 'calculator' && (
               <Reveal delay={80}>
                 <SmartSearch
                   query={search.query}

@@ -33,6 +33,7 @@ export const REPAIR_TIER_LABELS = {
 export function createDefaultRepairPriceSettings() {
   return {
     enabled: true,
+    modelCalculatorEnabled: false, // show "Рассчитать по модели" tab to clients
     city: 'Ставрополь',
     labor: {
       display: 2000,

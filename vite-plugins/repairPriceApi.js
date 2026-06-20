@@ -314,6 +314,21 @@ function registerRepairPriceApi(server) {
           }
         }
 
+        // ── Public feature flags (slim — no internal markup data) ─────────
+        if (pathname === '/api/repair-price/features') {
+          const s = getRepairPriceSettings();
+          return sendJson(res, 200, { modelCalculatorEnabled: s.modelCalculatorEnabled ?? false });
+        }
+
+        // ── Guard: calculator endpoints disabled when flag is off ─────────
+        const calcPaths = ['/api/repair-price/models', '/api/repair-price', '/api/repair-price/model-price'];
+        if (calcPaths.includes(pathname) && !isAdminRequest(req)) {
+          const s = getRepairPriceSettings();
+          if (!(s.modelCalculatorEnabled ?? false)) {
+            return sendJson(res, 403, { error: 'Функция временно недоступна', code: 'FEATURE_DISABLED' });
+          }
+        }
+
         if (pathname === '/api/repair-price/models') {
           try {
             const q = url.searchParams.get('q') ?? '';

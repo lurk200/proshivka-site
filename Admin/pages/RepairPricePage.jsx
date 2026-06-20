@@ -1724,6 +1724,60 @@ function DemandTab({ onCreateService }) {
   );
 }
 
+// ── Calculator feature toggle ─────────────────────────────────────────────────
+
+function CalculatorToggleCard({ settings, onSave, saving }) {
+  const enabled = settings?.modelCalculatorEnabled ?? false;
+  const [toggling, setToggling] = useState(false);
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      await onSave({ ...settings, modelCalculatorEnabled: !enabled });
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  return (
+    <AdminCard className="p-4 mb-1">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[14px] font-semibold text-white">Рассчитать по модели</span>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                enabled
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-[var(--bg-elevated)] text-[#6b7280] border-white/[0.08]'
+              }`}>
+                {enabled ? 'Видно клиентам' : 'Скрыто от клиентов'}
+              </span>
+            </div>
+            <p className="text-[12px] text-[#6b7280]">
+              {enabled
+                ? 'На /prise показываются обе вкладки. Клиент может рассчитать стоимость по модели.'
+                : 'На /prise показывается только «Каталог услуг». Синк поставщиков и внутренняя работа продолжаются.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={toggling || saving || !settings}
+          className={`shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            enabled
+              ? 'bg-white/[0.06] border border-white/[0.1] text-[#9ca3af] hover:text-red-400 hover:border-red-400/30'
+              : 'bg-[#84CC16] text-[#0a0b0e] hover:bg-[#a3e635]'
+          }`}
+        >
+          {toggling ? 'Сохраняем...' : enabled ? 'Скрыть от клиентов' : 'Включить для клиентов'}
+        </button>
+      </div>
+    </AdminCard>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RepairPricePage() {
@@ -1784,6 +1838,8 @@ export default function RepairPricePage() {
         title="Прайс и услуги"
         description="Управление каталогом услуг, закупочными ценами и наценками."
       />
+
+      <CalculatorToggleCard settings={settings} onSave={save} saving={saving} />
 
       <AdminTabs tabs={tabs} active={tab} onChange={setTab} />
 
