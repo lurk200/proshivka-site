@@ -1,22 +1,30 @@
 /**
  * Liberti.ru SSR provider — fetches model pages and parses product cards.
- * City context is set via BITRIX_SM_SALE_LOCATION cookie (auto-detected or configured).
+ *
+ * City context: Liberti uses two cookies to set location:
+ *   cityId=468776   — Stavropol city ID (from data-id in city picker)
+ *   storeId=468777  — Stavropol store ID (from relCityStore JSON on page)
+ *
+ * Without these cookies the server returns Moscow inventory (IP-based default).
+ * BITRIX_SM_SALE_LOCATION is NOT used by this site — verified empirically.
  */
 
 import { buildSupplierQuery } from './greenSparkSync.js';
 import { resolveModelUrl } from './libertiModelMap.js';
 
 const BASE_URL = 'https://liberti.ru';
-const CITY_COOKIE = 'BITRIX_SM_SALE_LOCATION';
 const CITY_LABEL = 'Ставрополь';
+
+// Stavropol IDs extracted from Liberti city picker (data-id / relCityStore JSON).
+// These are stable Bitrix entity IDs — unlikely to change.
+const STAVROPOL_CITY_ID = '468776';
+const STAVROPOL_STORE_ID = '468777';
 
 const FETCH_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.5',
 };
-
-let _cachedCityId = null;
 
 /**
  * Build a liberti model slug from a display label.
@@ -34,58 +42,44 @@ export function buildLibertiSlug(label) {
 }
 
 /**
- * Search for Stavropol's Bitrix location ID inside raw HTML.
- * Tries several patterns common in 1C-Bitrix sites.
+ * Extract Stavropol cityId+storeId from the city-picker HTML.
+ * Returns { cityId, storeId } or null.
+ * Liberti embeds data-id / data-storeId on each <li> in the store-manager popup.
  */
-function extractCityId(html) {
-  // Pattern 1: JSON-like {"id":"123","name":"Ставрополь"} or reverse
-  const jsonMatch =
-    html.match(/"id"\s*:\s*"?(\d+)"?[^}]{0,200}"name"\s*:\s*"Ставрополь"/i) ||
-    html.match(/"name"\s*:\s*"Ставрополь"[^}]{0,200}"id"\s*:\s*"?(\d+)"?/i);
-  if (jsonMatch) return jsonMatch[1];
-
-  // Pattern 2: data-location-id or data-city-id attribute near "Ставрополь"
-  const attrFwd = html.match(/data-(?:location|city)-id="(\d+)"[^>]{0,300}>(?:[^<]*<[^/][^>]*>[^<]*){0,3}Ставрополь/is);
-  if (attrFwd) return attrFwd[1];
-  const attrBwd = html.match(/Ставрополь(?:[^<]*<\/[^>]+>){0,3}[^<]{0,200}data-(?:location|city)-id="(\d+)"/is);
-  if (attrBwd) return attrBwd[1];
-
-  // Pattern 3: href="/city/xxx/" link near Stavropol text
-  const slugMatch = html.match(/href="\/city\/([^/]+)\/"[^>]{0,100}>Ставрополь/i) ||
-    html.match(/Ставрополь[^<]{0,50}href="\/city\/([^/]+)\/"/i);
-  if (slugMatch) return slugMatch[1]; // might be a slug, not a numeric ID
-
-  // Pattern 4: LOCATION_ID hidden input
-  const inputMatch = html.match(/LOCATION_ID[^>]*value="(\d+)"/i);
-  if (inputMatch) return inputMatch[1];
-
+function extractStavropolContext(html) {
+  // <li data-id="468776" data-storeId="468777">...<span ...>Ставрополь</span>
+  const m = html.match(/data-id="(\d+)"\s+data-storeId="(\d+)"[^>]*>[\s\S]{0,300}Ставрополь/i);
+  if (m) return { cityId: m[1], storeId: m[2] };
   return null;
 }
 
 /**
- * Fetch the main page and auto-detect Stavropol's location ID.
- * Caches the result for the process lifetime.
+ * Returns { cityId, storeId } to use for the Stavropol warehouse.
+ * configuredCityId: if truthy, skips auto-detection and uses STAVROPOL_STORE_ID.
  */
-export async function discoverCityId(configured = null) {
-  if (configured) return configured;
-  if (_cachedCityId) return _cachedCityId;
+export async function discoverCityId(configuredCityId = null) {
+  if (configuredCityId) {
+    // Already configured — return with known Stavropol store
+    return { cityId: String(configuredCityId), storeId: STAVROPOL_STORE_ID };
+  }
 
+  // Auto-detect from main page
   try {
     const res = await fetch(`${BASE_URL}/`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(15000) });
     const html = await res.text();
-    const id = extractCityId(html);
-    if (id) {
-      _cachedCityId = id;
-      return id;
-    }
+    const ctx = extractStavropolContext(html);
+    if (ctx) return ctx;
   } catch {}
 
-  return null;
+  // Fallback to hardcoded Stavropol IDs
+  return { cityId: STAVROPOL_CITY_ID, storeId: STAVROPOL_STORE_ID };
 }
 
-async function fetchPage(url, cityId) {
+async function fetchPage(url, cityCtx) {
   const headers = { ...FETCH_HEADERS };
-  if (cityId) headers['Cookie'] = `${CITY_COOKIE}=${cityId}`;
+  if (cityCtx?.cityId) {
+    headers['Cookie'] = `cityId=${cityCtx.cityId}; storeId=${cityCtx.storeId ?? STAVROPOL_STORE_ID}`;
+  }
   const res = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
@@ -197,7 +191,9 @@ export function parseLibertiProducts(html, supplierId, modelSlug) {
  * Returns normalized product records (Block 4 format).
  */
 export async function syncLibertiModel(modelLabel, supplierId, configuredCityId = null) {
-  const cityId = await discoverCityId(configuredCityId);
+  // cityCtx = { cityId, storeId } — always has Stavropol fallback
+  const cityCtx = await discoverCityId(configuredCityId);
+  const cityId = cityCtx?.cityId ?? null;
 
   // Try map first (real Bitrix URLs, handles + and other specials)
   const mapEntry = resolveModelUrl(modelLabel);
@@ -216,7 +212,7 @@ export async function syncLibertiModel(modelLabel, supplierId, configuredCityId 
   }
 
   try {
-    const html = await fetchPage(modelUrl, cityId);
+    const html = await fetchPage(modelUrl, cityCtx);
 
     if ((html.includes('404') && html.includes('не найден')) || !html.includes('Артикул:')) {
       return { slug, products: [], error: null, cityId, guessed };

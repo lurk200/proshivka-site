@@ -120,7 +120,10 @@ const LIBERTI_SUPPLIER = {
   dataSource: {
     type: 'ssr_page',
     urlTemplate: 'https://liberti.ru/models/{slug}/',
-    cityId: null,
+    // Stavropol IDs from Liberti city picker (data-id / relCityStore).
+    // Cookie: cityId=468776; storeId=468777 — switches warehouse to Stavropol.
+    cityId: '468776',
+    storeId: '468777',
   },
   city: 'Ставрополь',
   lastPriceCheck: null,
