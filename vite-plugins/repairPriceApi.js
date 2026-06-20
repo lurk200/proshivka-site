@@ -79,6 +79,63 @@ function idFromPath(pathname, prefix) {
   return pathname.slice(prefix.length) || null;
 }
 
+const STOCK_TTL_MS = 6 * 60 * 60 * 1000; // re-sync Liberti after 6 hours
+
+/**
+ * Shared sync logic: resolve fresh supplier items for a model label.
+ * Used by both the admin /supplier-parts endpoint and the public /model-price endpoint.
+ * Returns { items, syncMeta } — items are RAW supplier records (not for public exposure).
+ */
+async function resolveSupplierItemsForModel(label, refresh = false) {
+  const libertiSup = listSuppliers().find(s => s.dataSource?.type === 'ssr_page');
+  let items = findStockForModel(label);
+
+  const libertiCached = libertiSup ? items.filter(p => p.supplierId === libertiSup.id) : [];
+  const hasFreshLibertiItems = !refresh && libertiCached.some(
+    p => p.fetchedAt && Date.now() - new Date(p.fetchedAt).getTime() < STOCK_TTL_MS,
+  );
+
+  let syncMeta;
+
+  if (!libertiSup) {
+    syncMeta = { ran: false, reason: 'no-liberti-supplier' };
+  } else if (hasFreshLibertiItems) {
+    syncMeta = { ran: false, reason: 'fresh-cache', itemsForModel: libertiCached.length };
+  } else {
+    try {
+      const result = await syncLibertiModel(
+        label, libertiSup.id, libertiSup.dataSource?.cityId ?? null,
+      );
+      syncMeta = {
+        ran: true,
+        slug: result.slug,
+        url: result.slug ? `https://liberti.ru/models/${result.slug}/` : null,
+        cityId: result.cityId,
+        count: result.products.length,
+        error: result.error ?? null,
+        guessed: result.guessed ?? false,
+      };
+      if (result.products.length > 0) {
+        mergeIntoStock(result.products);
+        const allStock = readStock();
+        const libertiBySlug = allStock.filter(
+          p => p.supplierId === libertiSup.id && p.model === result.slug,
+        );
+        const otherItems = findStockForModel(label, allStock).filter(
+          p => p.supplierId !== libertiSup.id,
+        );
+        items = [...libertiBySlug, ...otherItems];
+      } else {
+        items = findStockForModel(label);
+      }
+    } catch (e) {
+      syncMeta = { ran: true, error: e.message };
+    }
+  }
+
+  return { items, syncMeta };
+}
+
 function registerRepairPriceApi(server) {
   server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url, 'http://localhost');
@@ -125,72 +182,55 @@ function registerRepairPriceApi(server) {
           }
         }
 
-        // ── Supplier parts for model (lazy sync from liberti + GS cache) ──
+        // ── Supplier parts for model — ADMIN ONLY (raw supplier data) ──────
         if (pathname === '/api/repair-price/supplier-parts') {
+          if (!requireAdmin(req, res)) return;
           const label = url.searchParams.get('label')?.trim() || '';
           const refresh = url.searchParams.get('refresh') === '1';
           if (!label) return sendJson(res, 400, { error: 'label required' });
 
-          const STOCK_TTL_MS = 6 * 60 * 60 * 1000; // re-sync after 6 hours
-
           const supplierQuery = buildSupplierQuery(label);
-          const libertiSup = listSuppliers().find(s => s.dataSource?.type === 'ssr_page');
+          const { items, syncMeta } = await resolveSupplierItemsForModel(label, refresh);
+          return sendJson(res, 200, { supplierQuery, items, stockTotal: readStock().length, syncMeta });
+        }
 
-          // Items for this model by title-token match (GS + Liberti by title)
-          let items = findStockForModel(label);
+        // ── Public model price — returns ONLY computed clientPrice per partType ──
+        // No raw supplier fields (no title, sku, supplier price, supplierId, url).
+        if (pathname === '/api/repair-price/model-price') {
+          const label = url.searchParams.get('label')?.trim() || '';
+          const refresh = url.searchParams.get('refresh') === '1';
+          if (!label) return sendJson(res, 400, { error: 'label required' });
 
-          // Trigger is PER MODEL: look at Liberti records specifically for this label.
-          // Global cache size is irrelevant — other models' records must not suppress sync.
-          const libertiCached = libertiSup
-            ? items.filter(p => p.supplierId === libertiSup.id)
-            : [];
-          const hasFreshLibertiItems = !refresh && libertiCached.some(
-            p => p.fetchedAt && Date.now() - new Date(p.fetchedAt).getTime() < STOCK_TTL_MS,
-          );
+          const { items } = await resolveSupplierItemsForModel(label, refresh);
+          if (!items.length) return sendJson(res, 200, { items: [] });
 
-          let syncMeta; // always filled — null removed
+          const settings = getRepairPriceSettings();
+          const catSettings = settings.categorySettings ?? {};
 
-          if (!libertiSup) {
-            syncMeta = { ran: false, reason: 'no-liberti-supplier' };
-          } else if (hasFreshLibertiItems) {
-            syncMeta = { ran: false, reason: 'fresh-cache', itemsForModel: libertiCached.length };
-          } else {
-            // Sync specifically for this model
-            try {
-              const result = await syncLibertiModel(
-                label,
-                libertiSup.id,
-                libertiSup.dataSource?.cityId ?? null,
-              );
-              syncMeta = {
-                ran: true,
-                slug: result.slug,
-                url: result.slug ? `https://liberti.ru/models/${result.slug}/` : null,
-                cityId: result.cityId,
-                count: result.products.length,
-                error: result.error ?? null,
-                guessed: result.guessed ?? false,
-              };
-              if (result.products.length > 0) {
-                mergeIntoStock(result.products);
-                // Precise fetch: Liberti by (supplierId, model slug) + non-Liberti by title
-                const allStock = readStock();
-                const libertiBySlug = allStock.filter(
-                  p => p.supplierId === libertiSup.id && p.model === result.slug,
-                );
-                const otherItems = findStockForModel(label, allStock).filter(
-                  p => p.supplierId !== libertiSup.id,
-                );
-                items = [...libertiBySlug, ...otherItems];
-              } else {
-                items = findStockForModel(label); // GS-only fallback
-              }
-            } catch (e) {
-              syncMeta = { ran: true, error: e.message };
-            }
+          // Per partType: pick the best available item (in_stock/low → cheapest).
+          // Return ONLY public-safe fields: partType, clientPrice, stockStatus.
+          const bestByType = new Map();
+          const priority = (s) => ({ in_stock: 0, low: 1, preorder: 2, out: 3 }[s] ?? 4);
+          for (const item of items) {
+            const pt = item.partType;
+            if (!pt) continue;
+            const existing = bestByType.get(pt);
+            const isBetter = !existing ||
+              priority(item.stockStatus) < priority(existing.stockStatus) ||
+              (priority(item.stockStatus) === priority(existing.stockStatus) &&
+               Number(item.price ?? Infinity) < Number(existing.price ?? Infinity));
+            if (isBetter) bestByType.set(pt, item);
           }
 
-          return sendJson(res, 200, { supplierQuery, items, stockTotal: readStock().length, syncMeta });
+          const publicItems = [...bestByType.entries()].map(([partType, item]) => ({
+            partType,
+            stockStatus: item.stockStatus,
+            clientPrice: item.price && Number(item.price) > 0
+              ? computeSimplePrice(Number(item.price), partType, catSettings)
+              : null,
+          }));
+
+          return sendJson(res, 200, { items: publicItems });
         }
 
         // ── Public services catalog ────────────────────────────────────────

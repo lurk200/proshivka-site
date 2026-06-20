@@ -4,8 +4,7 @@ import { fetchServices } from '../api/repairPriceApi';
 import { withWhatsappText } from '../../utils/contactActions';
 import { trackServiceCta } from '../../hooks/useAnalytics';
 import { brandFromModel, deviceTypeFromModel } from '../utils/brandFromModel';
-import { useSupplierParts } from '../hooks/useSupplierParts';
-import { computeSimplePrice, createDefaultCategorySettings } from '../../data/repairCategorySettings';
+import { useModelPrice } from '../hooks/useModelPrice';
 
 // Part groups — must match ServiceCatalog
 const PART_GROUPS = [
@@ -20,12 +19,12 @@ const PART_GROUPS = [
   { key: 'other',     label: 'Прочее',           types: new Set(['keyboard', 'water', 'diagnostic', 'other']) },
 ];
 
-const DEFAULT_CAT = createDefaultCategorySettings();
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatPrice(svc) {
-  if (svc.clientPrice != null) return `${Number(svc.clientPrice).toLocaleString('ru')} ₽`;
+function formatPrice(svc, supplierData) {
+  // Supplier-computed price takes priority over admin-set price
+  const cp = supplierData?.clientPrice ?? svc.clientPrice;
+  if (cp != null) return `${Number(cp).toLocaleString('ru')} ₽`;
   if (svc.price != null) return `${Number(svc.price).toLocaleString('ru')} ₽`;
   if (svc.priceFrom != null && svc.priceTo != null)
     return `${Number(svc.priceFrom).toLocaleString('ru')} – ${Number(svc.priceTo).toLocaleString('ru')} ₽`;
@@ -41,15 +40,14 @@ function availPriority(svc) {
   return 3;
 }
 
-// Supplier stock sort: in_stock → low → preorder → out
-function partPriority(p) {
-  if (p.stockStatus === 'in_stock') return 0;
-  if (p.stockStatus === 'low') return 1;
-  if (p.stockStatus === 'preorder') return 2;
-  return 3;
+// Map supplier stockStatus → service availability string
+function supplierStockToAvailability(stockStatus) {
+  if (stockStatus === 'in_stock' || stockStatus === 'low') return 'in_stock';
+  if (stockStatus === 'preorder') return 'order';
+  return null;
 }
 
-// ── Availability badge (generic service) ──────────────────────────────────────
+// ── Availability badge ────────────────────────────────────────────────────────
 
 function AvailabilityBadge({ status }) {
   if (status === 'in_stock') return (
@@ -69,105 +67,16 @@ function AvailabilityBadge({ status }) {
   );
 }
 
-// ── Supplier stock badge ──────────────────────────────────────────────────────
-
-function StockBadge({ status }) {
-  if (status === 'in_stock') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />В наличии
-    </span>
-  );
-  if (status === 'low') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />Мало
-    </span>
-  );
-  if (status === 'preorder') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />Под заказ
-    </span>
-  );
-  return null;
-}
-
-// ── Supplier parts section (inside service card) ──────────────────────────────
-
-function SupplierSection({ parts, loading }) {
-  if (loading) {
-    return (
-      <div className="border-t border-[var(--border-subtle)] mt-2 pt-2 animate-pulse space-y-1.5">
-        <div className="h-2.5 w-24 rounded bg-[var(--bg-elevated)]" />
-        <div className="h-2.5 w-full rounded bg-[var(--bg-elevated)]" />
-        <div className="h-2.5 w-3/4 rounded bg-[var(--bg-elevated)]" />
-      </div>
-    );
-  }
-
-  // Show only parts that have some stock (not "out")
-  const available = [...parts]
-    .filter(p => p.stockStatus !== 'out')
-    .sort((a, b) => partPriority(a) - partPriority(b));
-
-  if (!available.length) return null;
-
-  const shown = available.slice(0, 3);
-  const extra = available.length - 3;
-
-  return (
-    <div className="border-t border-[var(--border-subtle)] mt-2 pt-2 space-y-1.5">
-      <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wide">
-        Детали у поставщика
-      </p>
-      {shown.map((p, i) => (
-        <div key={i} className="flex items-start gap-2 min-w-0">
-          <div className="flex-1 min-w-0">
-            <span className="text-[11px] text-[var(--text-secondary)] leading-tight line-clamp-1">
-              {p.title}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <StockBadge status={p.stockStatus} />
-            {p.price != null && (
-              <span className="text-[11px] font-semibold text-[var(--text-primary)] tabular-nums">
-                {p.price.toLocaleString('ru')} ₽
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-      {extra > 0 && (
-        <p className="text-[10px] text-[var(--text-muted)]">+{extra} вариантов</p>
-      )}
-    </div>
-  );
-}
-
 // ── Service card ──────────────────────────────────────────────────────────────
 
-function ServiceCard({ svc, modelLabel, contacts, supplierParts, partsLoading }) {
+function ServiceCard({ svc, modelLabel, contacts, supplierData, priceLoading }) {
   const whatsappContact = contacts?.find(c => c.type === 'whatsapp');
 
-  // Best in-stock supplier part (cheapest available)
-  const bestPart = supplierParts?.length
-    ? [...supplierParts]
-        .filter(p => p.stockStatus === 'in_stock' || p.stockStatus === 'low')
-        .sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity))[0] ?? null
-    : null;
-
-  // Client price from supplier part + default markup
-  const supplierClientPrice = bestPart?.price
-    ? computeSimplePrice(bestPart.price, svc.partType, DEFAULT_CAT)
-    : null;
-
-  // Override availability badge when supplier confirms stock
-  const hasSupplierStock = !!bestPart;
-  const effectiveAvail = hasSupplierStock ? 'in_stock' : svc.availability;
-
-  // Display price: supplier-computed > admin-computed > generic range
-  const priceStr = supplierClientPrice != null
-    ? `${supplierClientPrice.toLocaleString('ru')} ₽`
-    : formatPrice(svc);
-  const hasRealPrice = supplierClientPrice != null || svc.clientPrice != null;
+  // Supplier data enriches availability and price — no raw supplier fields exposed
+  const supplierAvail = supplierData ? supplierStockToAvailability(supplierData.stockStatus) : null;
+  const effectiveAvail = supplierAvail ?? svc.availability;
+  const hasRealPrice = (supplierData?.clientPrice != null) || (svc.clientPrice != null);
+  const priceStr = formatPrice(svc, supplierData);
 
   let ctaHref;
   if (modelLabel && whatsappContact?.url) {
@@ -197,19 +106,23 @@ function ServiceCard({ svc, modelLabel, contacts, supplierParts, partsLoading })
           <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed line-clamp-2">{svc.description}</p>
         )}
 
-        {/* Supplier stock section — loading skeleton or parts list */}
-        <SupplierSection parts={supplierParts ?? []} loading={partsLoading} />
+        {/* Price skeleton while supplier data loads */}
+        {priceLoading && !supplierData && (
+          <div className="mt-auto pt-1.5 h-7 w-24 rounded bg-[var(--bg-elevated)] animate-pulse" />
+        )}
 
-        <div className="mt-auto pt-1.5 flex items-end justify-between gap-2">
-          <p className={`text-[18px] font-bold leading-none ${hasRealPrice ? 'text-[#84CC16]' : 'text-[var(--text-primary)]'}`}>
-            {priceStr}
-          </p>
-          {svc.duration && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] shrink-0">
-              <Clock className="w-3 h-3" />{svc.duration}
-            </span>
-          )}
-        </div>
+        {!priceLoading && (
+          <div className="mt-auto pt-1.5 flex items-end justify-between gap-2">
+            <p className={`text-[18px] font-bold leading-none ${hasRealPrice ? 'text-[#84CC16]' : 'text-[var(--text-primary)]'}`}>
+              {priceStr}
+            </p>
+            {svc.duration && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] shrink-0">
+                <Clock className="w-3 h-3" />{svc.duration}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-[var(--border-subtle)] px-3.5 py-2.5">
@@ -260,19 +173,8 @@ export default function ModelServiceCatalog({ modelLabel, contacts }) {
   const brand = useMemo(() => brandFromModel(modelLabel), [modelLabel]);
   const deviceType = useMemo(() => deviceTypeFromModel(modelLabel), [modelLabel]);
 
-  // Supplier stock — fetched in parallel, never blocks catalog render
-  const { parts, partsLoading } = useSupplierParts(modelLabel);
-
-  // Group supplier parts by partType for O(1) lookup per service card
-  const partsByType = useMemo(() => {
-    const map = new Map();
-    for (const p of parts) {
-      if (!p.partType) continue;
-      if (!map.has(p.partType)) map.set(p.partType, []);
-      map.get(p.partType).push(p);
-    }
-    return map;
-  }, [parts]);
+  // Public-safe price/availability per partType — no raw supplier data
+  const { priceMap, priceLoading } = useModelPrice(modelLabel);
 
   useEffect(() => {
     if (!modelLabel) { setItems([]); return; }
@@ -325,8 +227,8 @@ export default function ModelServiceCatalog({ modelLabel, contacts }) {
                 svc={svc}
                 modelLabel={modelLabel}
                 contacts={contacts}
-                supplierParts={partsByType.get(svc.partType) ?? []}
-                partsLoading={partsLoading}
+                supplierData={priceMap[svc.partType] ?? null}
+                priceLoading={priceLoading}
               />
             ))}
           </div>
