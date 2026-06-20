@@ -160,10 +160,67 @@ const LIBERTI_REPAIR_TIMES = {
   'face-id':      '2–3 часа',
 };
 
-/** Derive a customer-facing quality label from a liberti product title. */
-function getLibertiQualityLabel(title) {
+/** Quality tier (badge label) — "Оригинал" or "Аналог". */
+function getLibertiQualityTier(title) {
   if (/\bOR\s+SP\b|100%\s+OR\b|оригинал/i.test(String(title || ''))) return 'Оригинал';
-  return 'Совместимый';
+  return 'Аналог';
+}
+
+/**
+ * Extract a meaningful description from a supplier part title.
+ *
+ * Strategy: remove noise (device name, HW codes, filler), keep signal
+ * (technology type, frame/assembly, color, quality tier words).
+ *
+ * Security: strips OR SP codes and SM-XXXX identifiers so no supplier-
+ * identifiable marks leak to the public page.
+ *
+ * @param {string} rawTitle  — full product title from supplier
+ * @param {string} modelLabel — device commercial name ("Samsung Galaxy S25 Ultra")
+ * @returns {string} clean description, or "Аналог" if nothing remains
+ */
+function extractDescriptiveLabel(rawTitle, modelLabel) {
+  let t = String(rawTitle || '');
+  if (!t) return 'Аналог';
+
+  // 1. Strip device model tokens (>= 4 chars) from the model label
+  const modelQuery = buildSupplierQuery(String(modelLabel || ''));
+  for (const tok of modelQuery.split(/\s+/).filter(w => w.length >= 4)) {
+    t = t.replace(new RegExp(`\\b${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi'), '');
+  }
+
+  // 2. Strip hardware / SKU codes
+  t = t
+    .replace(/\bSM-[A-Z0-9]{2,12}\b/gi, '')  // SM-S938B
+    .replace(/\bEB-[A-Z\d]+\b/gi, '')         // EB-BS938ABY
+    .replace(/\bA\d{4,5}\b/g, '')             // A2221
+    .replace(/\b[A-Z]\d{3,4}[A-Z0-9]?\b/g, '') // S938B (bare)
+    .replace(/\b[A-Z]\d{2,3}\b/g, '')         // S25, A51 (phone gen codes)
+    .replace(/\b0[A-Z]-\d{5,}\b/gi, '');      // 0L-00068741 (article)
+
+  // 3. Strip part-type opening words (implied by the service card category)
+  t = t.replace(/^(?:(?:lcd|amoled)\s+)?(?:дисплей|экран)\s*/gi, '');
+  t = t.replace(/^(?:аккумулятор|акб|батаре[яи])\s*(?:\([^)]+\))?\s*/gi, '');
+  t = t.replace(/^задн[аяий]+\s*крышк[аи]\s*/gi, '');
+  t = t.replace(/^крышк[аи]\s*/gi, '');
+  t = t.replace(/^(?:(?:основн[аяой]+|передн[аяий]+)\s+)?камер[ыа]\s*/gi, '');
+  t = t.replace(/^(?:стекло\s+)?камер[ыа]\s*/gi, '');
+  t = t.replace(/^(?:разъем|шлейф|динамик|полифон|вибромотор|кнопк[аи])\s*/gi, '');
+
+  // 4. Strip supplier-identifiable markers (OR SP = Liberti quality code)
+  t = t.replace(/\b100%\s*OR\s*SP\b|\bOR\s*SP\b/gi, '');
+
+  // 5. Strip filler words
+  t = t
+    .replace(/\b(?:для|запчасть|деталь|совместим[аяое]?)\b/gi, '')
+    .replace(/&quot;/g, '"')   // decode HTML entity
+    .replace(/\(\s*\)/g, '');  // empty parens
+
+  // 6. Final cleanup
+  t = t.replace(/\s*[,;]\s*/g, ', ').replace(/,\s*,/g, ',').replace(/\s+/g, ' ').trim();
+  t = t.replace(/^[,;:\-\s]+|[,;:\-\s]+$/g, '').trim();
+
+  return t || 'Аналог';
 }
 
 /**
@@ -206,15 +263,16 @@ async function enrichWithLibertiData(payload, label, settings) {
     const clientPrice = computeSimplePrice(Number(item.price), kind, catSettings);
     if (!clientPrice) continue;
     const rt = LIBERTI_REPAIR_TIMES[kind] ?? '1–2 часа';
-    const ql = getLibertiQualityLabel(item.title);
+    const tier = getLibertiQualityTier(item.title);          // "Оригинал" / "Аналог"
+    const desc = extractDescriptiveLabel(item.title, label); // "в сборе в рамке Soft OLED 120 Гц"
     libertiCategories.push({
       repairType: repairTypeLabel(kind),
       repairTime: rt,
       options: [{
         id: `liberti-${kind}`,
-        partType: ql,
-        qualityLabel: ql,
-        variant: ql,
+        partType: tier,
+        qualityLabel: tier,
+        variant: desc,  // descriptive text shown below the quality badge
         totalPrice: clientPrice,
         inStock: item.stockStatus === 'in_stock' || item.stockStatus === 'low',
         repairTime: rt,
