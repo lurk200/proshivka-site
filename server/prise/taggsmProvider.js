@@ -85,14 +85,31 @@ const BRAND_ONLY = /^(iphone|айфон|samsung|самсунг|galaxy|галак
  * Человекочитаемое название: «iPhone 13 Pro», не только «Apple».
  * @param {Record<string, unknown>} item
  */
+/**
+ * Strip hardware model codes from a display string.
+ * "SM-S938 Galaxy S25 Ultra" → "Galaxy S25 Ultra"
+ * "Galaxy S25 Ultra SM-S938" → "Galaxy S25 Ultra"
+ * "iPhone 15 A3290"          → "iPhone 15"
+ */
+function stripHwCodes(str) {
+  return str
+    .replace(/\bSM-[A-Z0-9]{2,12}\b/gi, '') // Samsung SM-codes
+    .replace(/\b(?:SCH|GT)-[A-Z]\d{3,4}\b/gi, '')
+    .replace(/\bA\d{4,5}\b/g, '')            // Apple A-codes
+    .replace(/\bEB-[A-Z\d]+\b/gi, '')        // Battery codes
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function formatModelLabel(item) {
   const fabricator = String(item.name_fabricator || '').trim();
-  const model = String(item.name_model || '')
-    .trim()
-    .replace(/\s+/g, ' ');
-  const full = String(item.name_model2 || item.name_model_ || '')
-    .trim()
-    .replace(/\s+/g, ' ');
+  // Strip hardware codes before building display label
+  const model = stripHwCodes(
+    String(item.name_model || '').trim().replace(/\s+/g, ' '),
+  );
+  const full = stripHwCodes(
+    String(item.name_model2 || item.name_model_ || '').trim().replace(/\s+/g, ' '),
+  );
 
   if (model.length >= 2) {
     if (fabricator === 'Apple' && /^iphone/i.test(model)) {

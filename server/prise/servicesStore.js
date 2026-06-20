@@ -110,6 +110,26 @@ const DEFAULT_SUPPLIERS = [
   { id: 'sup_003', name: 'Местный склад', url: '', searchTemplate: '', lastPriceCheck: null, phone: '', rating: 3, note: 'Наличие в городе', createdAt: NOW },
 ];
 
+// Liberti is a built-in SSR supplier that must always exist.
+// The admin form can't add dataSource fields, so we upsert on startup.
+const LIBERTI_SUPPLIER = {
+  id: 'sup_liberti',
+  name: 'Liberti',
+  url: 'liberti.ru',
+  searchUrlTemplate: 'https://liberti.ru/models/{slug}/',
+  dataSource: {
+    type: 'ssr_page',
+    urlTemplate: 'https://liberti.ru/models/{slug}/',
+    cityId: null,
+  },
+  city: 'Ставрополь',
+  lastPriceCheck: null,
+  phone: '',
+  rating: 5,
+  note: 'Запчасти оптом. SSR-страницы по модели, синк без браузера.',
+  createdAt: NOW,
+};
+
 const DEFAULT_SERVICES = [
   // ── Смартфоны — Дисплей ──────────────────────────────────────────────────
   {
@@ -423,6 +443,14 @@ function initializeDefaults() {
   if (!fs.existsSync(SUPPLIERS_FILE)) {
     try { fs.writeFileSync(SUPPLIERS_FILE, JSON.stringify(DEFAULT_SUPPLIERS, null, 2), 'utf8'); } catch {}
   }
+  // Upsert Liberti — can't be added via admin form (no dataSource UI).
+  // Safe: only adds if missing, never overwrites existing entry.
+  try {
+    const suppliers = readJson(SUPPLIERS_FILE, []);
+    if (!suppliers.some(s => s.id === LIBERTI_SUPPLIER.id)) {
+      writeJson(SUPPLIERS_FILE, [...suppliers, LIBERTI_SUPPLIER]);
+    }
+  } catch {}
 }
 
 initializeDefaults();
