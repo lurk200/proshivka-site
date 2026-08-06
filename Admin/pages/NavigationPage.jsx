@@ -27,7 +27,7 @@ export default function NavigationPage() {
 
   return (
     <>
-      <PageHeader title="Навигация" description="Меню в шапке, карточки услуг и ссылки в футере." />
+      <PageHeader title="Навигация сайта" description="Меню в шапке, карточки услуг и ссылки в подвале сайта." />
 
       <AdminCard className="mb-6">
         <p className="text-[13px] font-medium text-white mb-4">Программный ремонт (карточка)</p>

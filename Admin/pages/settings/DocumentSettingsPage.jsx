@@ -54,7 +54,7 @@ export default function DocumentSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Настройки документов"
+        title="Шаблоны и QR-коды"
         description="QR-код для отзывов и параметры, встраиваемые в квитанции и акты."
         icon={FileText}
       />

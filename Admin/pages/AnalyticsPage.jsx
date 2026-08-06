@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Activity, BarChart2, ExternalLink, Globe, MousePointer2,
   RefreshCw, TrendingUp, Users, Zap, Search, Smartphone, Wrench,
@@ -758,11 +759,12 @@ function PerformanceTab({ data, onCleanup }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [demand, setDemand] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState(() => searchParams.get('tab') || 'overview');
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { ToastProvider } from '../components/ui';
 import AdminErrorBoundary from '../components/AdminErrorBoundary';
+import { isWideAdminRoute } from '../navigation';
 
 const LayoutContext = createContext({ sidebarCollapsed: false });
 export const useAdminLayout = () => useContext(LayoutContext);
@@ -50,7 +51,7 @@ export default function AdminLayout() {
         >
           <TopBar onMenuToggle={() => setSidebarOpen(o => !o)} />
           <main className="flex-1">
-            <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+            <div className={`${isWideAdminRoute(location.pathname) ? 'max-w-[1440px]' : 'max-w-5xl'} mx-auto px-4 sm:px-8 py-8`}>
               <AdminErrorBoundary key={location.pathname}>
                 <Outlet />
               </AdminErrorBoundary>

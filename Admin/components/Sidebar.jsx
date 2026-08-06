@@ -1,63 +1,24 @@
 import React, { useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, Sparkles,
-  LogOut, ExternalLink, Terminal, Image, Layers, Scale,
-  FileText, Navigation, LayoutTemplate, Globe, Calculator, ClipboardList,
-  Send, ChevronDown, PanelLeftClose, PanelLeft, X, Zap, Bell, BarChart2, QrCode, Star,
+  Calculator,
+  ChevronDown,
+  ExternalLink,
+  LogOut,
+  PanelLeft,
+  PanelLeftClose,
+  Terminal,
+  X,
+  Zap,
 } from 'lucide-react';
-// Note: MapPin, Wrench, FolderOpen, Lightbulb, Megaphone now only used in sub-editor components
 import { useAdminAuth } from '../context/AdminAuthContext';
-
-// ─── Nav data ──────────────────────────────────────────────────────────────
-
-const GENERAL_NAV = [
-  { to: '/admin', label: 'Обзор', icon: LayoutDashboard },
-  { to: '/admin/analytics', label: 'Аналитика сайта', icon: BarChart2 },
-];
-
-// ЗАКАЗЫ И КЛИЕНТЫ
-const ORDERS_NAV = [
-  { to: '/admin/orders', label: 'Заказы', icon: ClipboardList },
-  { to: '/admin/reviews', label: 'Отзывы', icon: Star },
-  { to: '/admin/repair-price', label: 'Калькулятор цен', icon: Calculator },
-];
-
-// КОНТЕНТ САЙТА
-const CONTENT_NAV = [
-  { to: '/admin/main', label: 'Главная страница', icon: Image },
-  { to: '/admin/software-repair', label: 'Программный ремонт', icon: Sparkles },
-  { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText },
-  { to: '/admin/service-template', label: 'Шаблон страниц услуг', icon: LayoutTemplate },
-  { to: '/admin/works', label: 'Наши работы', icon: Layers },
-  { to: '/admin/send-repair', label: 'Отправить в ремонт', icon: Send },
-];
-
-// SEO И ПРОДВИЖЕНИЕ
-const PROMO_NAV = [
-  { to: '/admin/seo', label: 'Мета-теги страниц', icon: Globe },
-  { to: '/admin/navigation', label: 'Меню и навигация', icon: Navigation },
-];
-
-// ДОКУМЕНТЫ
-const DOCS_NAV = [
-  { to: '/admin/legal', label: 'Юридические документы', icon: Scale },
-  { to: '/admin/settings/documents', label: 'Шаблоны печати', icon: QrCode },
-];
-
-// НАСТРОЙКИ
-const SETTINGS_NAV = [
-  { to: '/admin/settings/company', label: 'Компания и контакты', icon: Building2 },
-  { to: '/admin/settings/notifications', label: 'Уведомления', icon: Bell },
-];
+import { ADMIN_NAVIGATION } from '../navigation';
 
 const PREVIEW_LINKS = [
   { href: '/', label: 'Главная сайта', icon: ExternalLink },
-  { href: '/programmnyj-remont', label: 'Прог. ремонт', icon: Terminal },
-  { href: '/prise', label: 'Калькулятор', icon: Calculator },
+  { href: '/programmnyj-remont', label: 'Программный ремонт', icon: Terminal },
+  { href: '/prise', label: 'Прайс и услуги', icon: Calculator },
 ];
-
-// ─── Styles ────────────────────────────────────────────────────────────────
 
 const activeCls = 'bg-[#84CC16]/10 text-[#84CC16] border-[#84CC16]/20';
 const idleCls = 'text-[#9ca3af] hover:text-white hover:bg-white/[0.04] border-transparent';
@@ -72,8 +33,6 @@ const iconLinkClass = ({ isActive }) =>
     isActive ? activeCls : idleCls
   }`;
 
-// ─── NavGroup ─────────────────────────────────────────────────────────────
-
 function NavGroup({ title, items, collapsed, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -82,8 +41,8 @@ function NavGroup({ title, items, collapsed, defaultOpen = true }) {
       <div className="mb-1">
         <div className="mx-3 my-2 border-t border-white/[0.05]" />
         <div className="flex flex-col items-center gap-0.5">
-          {items.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={iconLinkClass} title={label}>
+          {items.map(({ path, label, icon: Icon, end }) => (
+            <NavLink key={path} to={path} end={end} className={iconLinkClass} title={label}>
               <Icon className="w-4 h-4" strokeWidth={1.75} />
             </NavLink>
           ))}
@@ -96,26 +55,19 @@ function NavGroup({ title, items, collapsed, defaultOpen = true }) {
     <div className="mb-0.5">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen(value => !value)}
         className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest text-[#4b5563] hover:text-[#6b7280] transition-colors"
       >
         <span className="flex-1 text-left">{title}</span>
-        <ChevronDown
-          className={`w-3 h-3 transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
-          strokeWidth={2.5}
-        />
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} strokeWidth={2.5} />
       </button>
       {open && (
         <div className="space-y-0.5">
-          {items.map(({ to, label, icon: Icon, badge }) => (
-            <NavLink key={to} to={to} className={navLinkClass}>
+          {items.map(({ path, label, icon: Icon, badge, end }) => (
+            <NavLink key={path} to={path} end={end} className={navLinkClass}>
               <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
               <span className="flex-1 min-w-0 truncate">{label}</span>
-              {badge != null && (
-                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[#84CC16]/15 text-[#84CC16] font-semibold font-mono">
-                  {badge}
-                </span>
-              )}
+              {badge != null && <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[#84CC16]/15 text-[#84CC16] font-semibold font-mono">{badge}</span>}
             </NavLink>
           ))}
         </div>
@@ -124,164 +76,56 @@ function NavGroup({ title, items, collapsed, defaultOpen = true }) {
   );
 }
 
-// ─── SidebarContent ───────────────────────────────────────────────────────
-
 function SidebarContent({ collapsed, onCollapse, onClose }) {
   const { logout } = useAdminAuth();
+  const overview = ADMIN_NAVIGATION[0].items;
 
   return (
     <>
-      {/* Header */}
-      <div
-        className={`h-14 flex items-center shrink-0 border-b border-white/[0.06] px-3 gap-2 ${
-          collapsed ? 'justify-center' : ''
-        }`}
-      >
+      <div className={`h-14 flex items-center shrink-0 border-b border-white/[0.06] px-3 gap-2 ${collapsed ? 'justify-center' : ''}`}>
         {collapsed ? (
           <Link to="/admin" title="Обзор">
-            <div className="w-8 h-8 rounded-lg bg-[#84CC16] flex items-center justify-center">
-              <Zap className="w-4 h-4 text-[#0a0b0e]" strokeWidth={2.5} />
-            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#84CC16] flex items-center justify-center"><Zap className="w-4 h-4 text-[#0a0b0e]" strokeWidth={2.5} /></div>
           </Link>
         ) : (
           <>
             <Link to="/admin" className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#84CC16] flex items-center justify-center shrink-0">
-                <Zap className="w-3.5 h-3.5 text-[#0a0b0e]" strokeWidth={2.5} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13.5px] font-bold text-white leading-tight tracking-tight">ПРОШИВКА</p>
-                <p className="text-[9px] font-mono text-[#4b5563] uppercase tracking-[0.12em]">Admin Panel</p>
-              </div>
+              <div className="w-7 h-7 rounded-lg bg-[#84CC16] flex items-center justify-center shrink-0"><Zap className="w-3.5 h-3.5 text-[#0a0b0e]" strokeWidth={2.5} /></div>
+              <div className="min-w-0"><p className="text-[13.5px] font-bold text-white leading-tight tracking-tight">ПРОШИВКА</p><p className="text-[9px] font-mono text-[#4b5563] uppercase tracking-[0.12em]">Админ-панель</p></div>
             </Link>
-            {onCollapse && (
-              <button
-                type="button"
-                onClick={onCollapse}
-                className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
-                title="Свернуть сайдбар"
-              >
-                <PanelLeftClose className="w-4 h-4" />
-              </button>
-            )}
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            {onCollapse && <button type="button" onClick={onCollapse} className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors shrink-0" title="Свернуть меню"><PanelLeftClose className="w-4 h-4" /></button>}
+            {onClose && <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors shrink-0" aria-label="Закрыть меню"><X className="w-4 h-4" /></button>}
           </>
         )}
       </div>
 
-      {/* Expand button in collapsed mode */}
-      {collapsed && onCollapse && (
-        <div className="flex justify-center py-2 border-b border-white/[0.06]">
-          <button
-            type="button"
-            onClick={onCollapse}
-            className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Развернуть сайдбар"
-          >
-            <PanelLeft className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {collapsed && onCollapse && <div className="flex justify-center py-2 border-b border-white/[0.06]"><button type="button" onClick={onCollapse} className="p-1.5 rounded-lg text-[#6b7280] hover:text-white hover:bg-white/[0.06] transition-colors" title="Развернуть меню"><PanelLeft className="w-4 h-4" /></button></div>}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
-        {/* General items (always visible) */}
+      <nav className="flex-1 overflow-y-auto py-2 px-2" aria-label="Разделы админ-панели">
         <div className="space-y-0.5 mb-1">
-          {GENERAL_NAV.map(({ to, label, icon: Icon }) =>
-            collapsed ? (
-              <NavLink key={to} to={to} end className={iconLinkClass} title={label}>
-                <Icon className="w-4 h-4" strokeWidth={1.75} />
-              </NavLink>
-            ) : (
-              <NavLink key={to} to={to} end className={navLinkClass}>
-                <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-                {label}
-              </NavLink>
-            )
-          )}
+          {overview.map(({ path, label, icon: Icon, end }) => (
+            <NavLink key={path} to={path} end={end} className={collapsed ? iconLinkClass : navLinkClass} title={collapsed ? label : undefined}>
+              <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+              {!collapsed && <span>{label}</span>}
+            </NavLink>
+          ))}
         </div>
-
-        <NavGroup title="Заказы и клиенты" items={ORDERS_NAV} collapsed={collapsed} />
-        <NavGroup title="Контент сайта" items={CONTENT_NAV} collapsed={collapsed} defaultOpen={false} />
-        <NavGroup title="SEO и продвижение" items={PROMO_NAV} collapsed={collapsed} defaultOpen={false} />
-        <NavGroup title="Документы" items={DOCS_NAV} collapsed={collapsed} defaultOpen={false} />
-        <NavGroup title="Настройки" items={SETTINGS_NAV} collapsed={collapsed} defaultOpen={false} />
+        {ADMIN_NAVIGATION.slice(1).map(group => <NavGroup key={group.id} title={group.title} items={group.items} collapsed={collapsed} defaultOpen={group.defaultOpen ?? false} />)}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-white/[0.06] py-2 px-2 shrink-0">
-        {!collapsed && (
-          <div className="mb-1 space-y-0.5">
-            {PREVIEW_LINKS.map(({ href, label, icon: Icon }) => (
-              <a
-                key={href}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] text-[#6b7280] hover:text-[#9ca3af] hover:bg-white/[0.03] transition-colors"
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                <span className="flex-1 truncate">{label}</span>
-                <ExternalLink className="w-3 h-3 opacity-50" />
-              </a>
-            ))}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={logout}
-          title={collapsed ? 'Выйти' : undefined}
-          className={`w-full flex items-center px-3 py-2.5 rounded-xl text-[13.5px] text-[#9ca3af] hover:text-red-400 hover:bg-red-500/[0.08] transition-colors ${
-            collapsed ? 'justify-center' : 'gap-3'
-          }`}
-        >
-          <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-          {!collapsed && 'Выйти'}
-        </button>
+        {!collapsed && <div className="mb-1 space-y-0.5">{PREVIEW_LINKS.map(({ href, label, icon: Icon }) => <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] text-[#6b7280] hover:text-[#9ca3af] hover:bg-white/[0.03] transition-colors"><Icon className="w-3.5 h-3.5 shrink-0" /><span className="flex-1 truncate">{label}</span><ExternalLink className="w-3 h-3 opacity-50" /></a>)}</div>}
+        <button type="button" onClick={logout} title={collapsed ? 'Выйти' : undefined} className={`w-full flex items-center px-3 py-2.5 rounded-xl text-[13.5px] text-[#9ca3af] hover:text-red-400 hover:bg-red-500/[0.08] transition-colors ${collapsed ? 'justify-center' : 'gap-3'}`}><LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />{!collapsed && 'Выйти'}</button>
       </div>
     </>
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────
-
 export default function Sidebar({ open, collapsed, onCollapse, onClose }) {
   return (
     <>
-      {/* Desktop sidebar — always in DOM, width transitions */}
-      <aside
-        className={`
-          fixed top-0 left-0 z-40 h-screen
-          hidden lg:flex flex-col
-          bg-[#0c0d10] border-r border-white/[0.06]
-          transition-[width] duration-300 ease-in-out overflow-hidden
-          ${collapsed ? 'w-[64px]' : 'w-[260px]'}
-        `}
-      >
-        <SidebarContent collapsed={collapsed} onCollapse={onCollapse} />
-      </aside>
-
-      {/* Mobile sidebar — slide in from left */}
-      <aside
-        className={`
-          fixed top-0 left-0 z-40 h-screen w-[260px]
-          flex flex-col lg:hidden
-          bg-[#0c0d10] border-r border-white/[0.06]
-          transition-transform duration-300 ease-in-out
-          ${open ? 'translate-x-0' : '-translate-x-full'}
-        `}
-      >
-        <SidebarContent collapsed={false} onClose={onClose} />
-      </aside>
+      <aside className={`fixed top-0 left-0 z-40 h-screen hidden lg:flex flex-col bg-[#0c0d10] border-r border-white/[0.06] transition-[width] duration-300 ease-in-out overflow-hidden ${collapsed ? 'w-[64px]' : 'w-[260px]'}`}><SidebarContent collapsed={collapsed} onCollapse={onCollapse} /></aside>
+      <aside className={`fixed top-0 left-0 z-40 h-screen w-[260px] flex flex-col lg:hidden bg-[#0c0d10] border-r border-white/[0.06] transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}><SidebarContent collapsed={false} onClose={onClose} /></aside>
     </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Save, Check, Building2, Plus, Trash2 } from 'lucide-react';
-import { PageHeader, AdminCard, Field, Input } from '../../components/ui';
+import { PageHeader, AdminCard, Field, Input, ConfirmModal } from '../../components/ui';
 import { useUnsavedGuard } from '../../hooks/useUnsavedGuard';
 
 function adminHeaders() {
@@ -32,6 +32,7 @@ export default function CompanySettingsPage() {
   const [saved, setSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [error, setError] = useState('');
+  const [pendingContactRemoval, setPendingContactRemoval] = useState(null);
   useUnsavedGuard(isDirty);
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function CompanySettingsPage() {
       contacts: (f.contacts ?? []).filter((_, i) => i !== idx),
     }));
     markDirty();
+    setPendingContactRemoval(null);
   };
 
   const handleSave = async () => {
@@ -182,7 +184,7 @@ export default function CompanySettingsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => removeContact(idx)}
+                  onClick={() => setPendingContactRemoval(idx)}
                   className="mt-5 p-2 text-[#6b7280] hover:text-red-400 transition-colors"
                   title="Удалить"
                 >
@@ -247,6 +249,13 @@ export default function CompanySettingsPage() {
           {saving ? 'Сохранение…' : saved ? 'Сохранено' : 'Сохранить изменения'}
         </button>
       </div>
+      <ConfirmModal
+        open={pendingContactRemoval !== null}
+        title="Удалить контакт?"
+        message="Контакт будет удалён из черновика. Сохраните изменения, чтобы обновить сайт."
+        onConfirm={() => removeContact(pendingContactRemoval)}
+        onCancel={() => setPendingContactRemoval(null)}
+      />
     </>
   );
 }

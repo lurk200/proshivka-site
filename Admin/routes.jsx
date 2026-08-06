@@ -5,7 +5,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import CompanyPage from './pages/CompanyPage';
 import LegalPage from './pages/LegalPage';
 import ServicePagesPage from './pages/ServicePagesPage';
 import ServiceTemplatePage from './pages/ServiceTemplatePage';
@@ -43,7 +42,7 @@ export const adminRoutes = [
         ),
         children: [
           { index: true, element: <DashboardPage /> },
-          { path: 'company', element: <CompanyPage /> },
+          { path: 'company', element: <Navigate to="/admin/settings/company" replace /> },
           { path: 'seo', element: <SeoPage /> },
           { path: 'navigation', element: <NavigationPage /> },
           { path: 'legal', element: <LegalPage /> },

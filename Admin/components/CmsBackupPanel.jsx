@@ -5,7 +5,7 @@ import {
   fetchCmsStoreStatus,
   restoreCmsBackup,
 } from '../../src/api/cmsApi';
-import { AdminCard } from '../components/ui';
+import { AdminCard, ConfirmModal } from '../components/ui';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -29,6 +29,7 @@ export default function CmsBackupPanel() {
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [pendingRestore, setPendingRestore] = useState(null);
 
   const loadStatus = async () => {
     setLoading(true);
@@ -61,12 +62,17 @@ export default function CmsBackupPanel() {
     }
   };
 
-  const handleRestore = async (event) => {
+  const handleRestore = (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setPendingRestore(file);
+  };
 
-    if (!window.confirm('Заменить текущий контент сайта данными из файла?')) return;
+  const confirmRestore = async () => {
+    if (!pendingRestore) return;
+    const file = pendingRestore;
+    setPendingRestore(null);
 
     setBusy('restore');
     setMessage('');
@@ -144,6 +150,14 @@ export default function CmsBackupPanel() {
 
       {message ? <p className="mt-4 text-[13px] text-[#84CC16]">{message}</p> : null}
       {error ? <p className="mt-4 text-[13px] text-[#f87171]">{error}</p> : null}
+      <ConfirmModal
+        open={Boolean(pendingRestore)}
+        title="Восстановить резервную копию?"
+        message="Текущий контент сайта будет полностью заменён данными из выбранного файла. Это действие нельзя отменить."
+        confirmLabel="Восстановить"
+        onConfirm={confirmRestore}
+        onCancel={() => setPendingRestore(null)}
+      />
     </AdminCard>
   );
 }

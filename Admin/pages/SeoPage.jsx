@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAdminPersist } from '../hooks/useAdminPersist';
 import { SEO_PAGE_LIST } from '../../src/data/seoContent';
 import { useSiteDraft } from '../hooks/useSiteDraft';
+import { SearchPreview, SearchReadiness, SearchTrafficMonitor, SeoQuality } from '../components/SeoWorkspace';
 import {
   PageHeader,
   AdminCard,
@@ -30,27 +31,13 @@ function CharHint({ value, min, max, label }) {
   );
 }
 
-function GooglePreview({ title, description, url }) {
-  return (
-    <div className="rounded-xl border border-white/[0.08] bg-[#0c0d10] p-4">
-      <p className="text-[11px] font-mono uppercase tracking-widest text-[#6b7280] mb-3">
-        Превью в Google
-      </p>
-      <p className="text-[18px] text-[#8ab4f8] leading-snug truncate">{title || 'Заголовок страницы'}</p>
-      <p className="text-[13px] text-[#84CC16] mt-0.5 truncate">{url || 'https://ваш-сайт.ru/страница'}</p>
-      <p className="text-[13px] text-[#9aa0a6] mt-1 line-clamp-2">
-        {description || 'Краткое описание страницы для поисковой выдачи.'}
-      </p>
-    </div>
-  );
-}
-
 function GlobalTab({ draft, setDraft }) {
   const g = draft.global;
   const setGlobal = (patch) => setDraft({ ...draft, global: { ...g, ...patch } });
 
   return (
     <div className="space-y-6">
+      <SearchReadiness global={g} />
       <AdminCard>
         <p className="text-[12px] font-mono text-[#84CC16] mb-4">Основные настройки</p>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -79,7 +66,7 @@ function GlobalTab({ draft, setDraft }) {
               onChange={(e) => setGlobal({ defaultDescription: e.target.value })}
             />
           </Field>
-          <Field label="Ключевые слова по умолчанию">
+          <Field label="Темы и поисковые фразы" hint="Подсказка для редактора. Google и Яндекс оценивают прежде всего содержимое страницы, а не meta keywords.">
             <Textarea
               rows={2}
               value={g.defaultKeywords}
@@ -189,6 +176,7 @@ function PageSeoTab({ pageId, draft, setDraft, siteUrl }) {
   const previewUrl = siteUrl
     ? `${siteUrl.replace(/\/$/, '')}${meta?.path ?? ''}`
     : meta?.path ?? '/';
+  const canonical = page.canonical?.trim() || (siteUrl?.trim() ? previewUrl : '');
 
   const setPage = (patch) =>
     setDraft({
@@ -205,7 +193,9 @@ function PageSeoTab({ pageId, draft, setDraft, siteUrl }) {
         <PreviewLink href={meta?.path ?? '/'} label="Открыть страницу" />
       </div>
 
-      <GooglePreview title={page.title} description={page.description} url={previewUrl} />
+      <SearchPreview title={page.title} description={page.description} url={canonical || previewUrl} />
+
+      <SeoQuality title={page.title} description={page.description} canonical={canonical} noindex={page.noindex} />
 
       <AdminCard>
         <div className="space-y-4">
@@ -221,7 +211,7 @@ function PageSeoTab({ pageId, draft, setDraft, siteUrl }) {
             />
             <CharHint value={page.description} min={120} max={160} label="Description" />
           </Field>
-          <Field label="Keywords" hint="Через запятую">
+          <Field label="Темы и поисковые фразы" hint="Через запятую. Используйте как план для текста, а не как способ повлиять на выдачу.">
             <Textarea
               rows={2}
               value={page.keywords ?? ''}
@@ -362,6 +352,7 @@ export default function SeoPage() {
   const mainTabs = [
     { id: 'global', label: 'Общие' },
     { id: 'pages', label: 'Страницы' },
+    { id: 'monitoring', label: 'Поиск и трафик' },
     { id: 'promotion', label: 'Продвижение' },
   ];
 
@@ -392,6 +383,8 @@ export default function SeoPage() {
           />
         </>
       ) : null}
+
+      {tab === 'monitoring' ? <SearchTrafficMonitor /> : null}
 
       {tab === 'promotion' ? <PromotionTab draft={draft} /> : null}
 

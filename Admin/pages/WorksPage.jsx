@@ -13,6 +13,7 @@ import {
   PreviewLink,
   AdminTabs,
   CollapsibleCard,
+  ConfirmModal,
 } from '../components/ui';
 
 function moveItem(list, from, to) {
@@ -28,6 +29,7 @@ export default function WorksPage() {
   useUnsavedGuard(isDirty);
   const [tab, setTab] = useState('works');
   const [openId, setOpenId] = useState(null);
+  const [pendingRemove, setPendingRemove] = useState(null);
 
   const updateItem = (idx, patch) => {
     const items = [...draft.items];
@@ -43,8 +45,8 @@ export default function WorksPage() {
   };
 
   const removeWork = (idx) => {
-    if (!window.confirm('Удалить эту работу?')) return;
     setDraft({ ...draft, items: draft.items.filter((_, i) => i !== idx) });
+    setPendingRemove(null);
   };
 
   const duplicateAt = (idx) => {
@@ -254,7 +256,7 @@ export default function WorksPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeWork(idx)}
+                        onClick={() => setPendingRemove(idx)}
                         className="p-2 rounded-lg text-[#9ca3af] hover:text-red-400"
                         aria-label="Удалить"
                       >
@@ -359,6 +361,13 @@ export default function WorksPage() {
       <AdminCard className="mt-6">
         <SaveBar onSave={save} onReset={reset} saved={saved} />
       </AdminCard>
+      <ConfirmModal
+        open={pendingRemove !== null}
+        title="Удалить работу?"
+        message="Работа исчезнет из черновика. Изменения станут видны на сайте только после сохранения."
+        onConfirm={() => removeWork(pendingRemove)}
+        onCancel={() => setPendingRemove(null)}
+      />
     </>
   );
 }
