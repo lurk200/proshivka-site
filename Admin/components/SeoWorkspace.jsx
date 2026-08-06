@@ -9,7 +9,8 @@ import {
   Search,
   TriangleAlert,
 } from 'lucide-react';
-import { AdminCard } from './ui';
+import { STAVROPOL_SEO_QUERY_GROUPS } from '../../src/data/seoContent';
+import { AdminCard, Field, Input, Textarea } from './ui';
 
 function normaliseUrl(value) {
   return value?.trim().replace(/\/$/, '') || '';
@@ -67,6 +68,47 @@ export function SearchReadiness({ global }) {
       </div>
       <p className="text-[13px] text-[#9ca3af] mb-2">Сначала заполните адрес сайта, затем подтвердите права в обеих системах и отправьте sitemap.</p>
       <div>{checklist.map(item => <CheckRow key={item.title} complete={item.complete} title={item.title} detail={item.detail} action={item.href ? <a href={item.href} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg text-[#6b7280] hover:text-[#84CC16] hover:bg-white/[0.04]" title={`Открыть ${item.title}`}><ExternalLink className="w-3.5 h-3.5" /></a> : null} />)}</div>
+    </AdminCard>
+  );
+}
+
+export function LocalSeoPanel({ localSeo, onChange, onApplyPreset }) {
+  const settings = localSeo ?? { city: 'Ставрополь', region: 'Ставропольский край', queryGroups: STAVROPOL_SEO_QUERY_GROUPS };
+  const groups = settings.queryGroups?.length ? settings.queryGroups : STAVROPOL_SEO_QUERY_GROUPS;
+  const updateGroup = (index, queries) => {
+    const nextGroups = groups.map((group, groupIndex) => groupIndex === index ? { ...group, queries: queries.split('\n').map(value => value.trim()).filter(Boolean) } : group);
+    onChange({ ...settings, queryGroups: nextGroups });
+  };
+
+  return (
+    <AdminCard>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <p className="text-[12px] font-mono text-[#84CC16]">ЛОКАЛЬНОЕ SEO</p>
+          <h2 className="text-[16px] font-semibold text-white mt-1">Ставрополь: город и план запросов</h2>
+          <p className="text-[13px] text-[#9ca3af] mt-1">Это рабочий список тем. Вносите фактические частотности и приоритеты после проверки в Wordstat.</p>
+        </div>
+        <button type="button" onClick={onApplyPreset} className="px-3.5 py-2 rounded-xl bg-[#84CC16] text-[#0c0d10] text-[13px] font-semibold hover:bg-[#9be02a] transition-colors">Применить SEO для Ставрополя</button>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 mb-5">
+        <Field label="Город"><Input value={settings.city ?? ''} onChange={event => onChange({ ...settings, city: event.target.value })} placeholder="Ставрополь" /></Field>
+        <Field label="Регион"><Input value={settings.region ?? ''} onChange={event => onChange({ ...settings, region: event.target.value })} placeholder="Ставропольский край" /></Field>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {groups.map((group, index) => (
+          <Field key={group.id} label={group.label} hint="Один запрос в строке">
+            <Textarea rows={3} value={(group.queries ?? []).join('\n')} onChange={event => updateGroup(index, event.target.value)} />
+          </Field>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5 text-[12px]">
+        <a href="https://wordstat.yandex.ru/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[#84CC16] hover:underline">Проверить спрос в Wordstat <ExternalLink className="w-3.5 h-3.5" /></a>
+        <a href="https://webmaster.yandex.ru/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[#84CC16] hover:underline">Собрать рекомендации в Вебмастере <ExternalLink className="w-3.5 h-3.5" /></a>
+      </div>
+      <div className="mt-4 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] px-4 py-3 text-[12px] text-[#bfdbfe]">
+        После публикации укажите «Ставрополь» в Яндекс Вебмастере: «Представление в поиске → Региональность». Также заполните фактические адрес и телефон в{' '}
+        <Link to="/admin/settings/company" className="text-[#84CC16] hover:underline">настройках компании</Link> — они попадут в локальную структурированную разметку.
+      </div>
     </AdminCard>
   );
 }

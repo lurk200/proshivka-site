@@ -25,10 +25,18 @@ export default function SiteSeo({ overrides }) {
       ? {
           '@context': 'https://schema.org',
           '@type': 'LocalBusiness',
-          name: seo.jsonLd.businessName || seo.siteName,
+          name: seo.company?.name || seo.jsonLd.businessName || seo.siteName,
           description: seo.jsonLd.description || seo.description,
-          telephone: seo.jsonLd.telephone,
-          address: seo.jsonLd.address,
+          telephone: seo.company?.phone || seo.jsonLd.telephone,
+          address: seo.localSeo?.city
+            ? {
+                '@type': 'PostalAddress',
+                streetAddress: seo.company?.address || seo.jsonLd.address,
+                addressLocality: seo.localSeo.city,
+                addressRegion: seo.localSeo.region || undefined,
+                addressCountry: 'RU',
+              }
+            : seo.company?.address || seo.jsonLd.address,
           priceRange: seo.jsonLd.priceRange,
           url: seo.canonical || undefined,
         }

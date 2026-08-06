@@ -64,6 +64,8 @@ export function usePageSeo(pageKeyOrOverrides, overrides = {}) {
       yandexVerification: global.yandexVerification,
       bingVerification: global.bingVerification,
       jsonLd: siteSeo?.jsonLd,
+      localSeo: siteSeo?.localSeo,
+      company: cmsData.company,
     };
   }, [cmsData.siteSeo, location.pathname, pageKeyOrOverrides, overrides]);
 }

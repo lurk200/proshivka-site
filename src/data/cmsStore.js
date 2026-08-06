@@ -253,6 +253,13 @@ function mergeSiteSeo(saved, ctx = {}) {
           tips: saved.promotion?.tips?.length ? saved.promotion.tips : base.promotion.tips,
         },
         jsonLd: { ...base.jsonLd, ...saved.jsonLd },
+        localSeo: {
+          ...base.localSeo,
+          ...saved.localSeo,
+          queryGroups: saved.localSeo?.queryGroups?.length
+            ? saved.localSeo.queryGroups
+            : base.localSeo.queryGroups,
+        },
         pages: Object.fromEntries(
           Object.keys(base.pages).map((key) => [
             key,

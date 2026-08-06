@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAdminPersist } from '../hooks/useAdminPersist';
-import { SEO_PAGE_LIST } from '../../src/data/seoContent';
+import { createStavropolSeoPreset, SEO_PAGE_LIST } from '../../src/data/seoContent';
 import { useSiteDraft } from '../hooks/useSiteDraft';
-import { SearchPreview, SearchReadiness, SearchTrafficMonitor, SeoQuality } from '../components/SeoWorkspace';
+import { LocalSeoPanel, SearchPreview, SearchReadiness, SearchTrafficMonitor, SeoQuality } from '../components/SeoWorkspace';
 import {
   PageHeader,
   AdminCard,
@@ -34,9 +34,36 @@ function CharHint({ value, min, max, label }) {
 function GlobalTab({ draft, setDraft }) {
   const g = draft.global;
   const setGlobal = (patch) => setDraft({ ...draft, global: { ...g, ...patch } });
+  const setLocalSeo = (localSeo) => setDraft({ ...draft, localSeo });
+  const applyStavropolPreset = () => {
+    const preset = createStavropolSeoPreset();
+    const pages = Object.fromEntries(
+      Object.entries(preset.pages).map(([pageId, patch]) => [
+        pageId,
+        {
+          ...draft.pages?.[pageId],
+          ...patch,
+          ogTitle: patch.title,
+          ogDescription: patch.description,
+        },
+      ]),
+    );
+    setDraft({
+      ...draft,
+      global: {
+        ...draft.global,
+        defaultDescription: preset.pages.home.description,
+        defaultKeywords: preset.pages.home.keywords,
+      },
+      localSeo: preset.localSeo,
+      jsonLd: { ...draft.jsonLd, ...preset.jsonLd },
+      pages: { ...draft.pages, ...pages },
+    });
+  };
 
   return (
     <div className="space-y-6">
+      <LocalSeoPanel localSeo={draft.localSeo} onChange={setLocalSeo} onApplyPreset={applyStavropolPreset} />
       <SearchReadiness global={g} />
       <AdminCard>
         <p className="text-[12px] font-mono text-[#84CC16] mb-4">Основные настройки</p>
