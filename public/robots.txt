@@ -4,4 +4,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://proshivka-stv.ru/sitemap.xml
+Sitemap: https://proshivka.online/sitemap.xml
