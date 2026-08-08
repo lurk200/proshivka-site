@@ -62,10 +62,11 @@
     --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
     --shadow-card: 0 20px 40px rgba(15, 23, 42, 0.12);
     --glass-bg: rgba(255, 255, 255, 0.7);
-    --hero-gradient: linear-gradient(to top, #EEF2F6 0%, rgba(238, 242, 246, 0.7) 40%, transparent 100%);
-    --hero-img-opacity: 0.9;
+    --hero-gradient: linear-gradient(to top, #EEF2F6 0%, rgba(238, 242, 246, 0.55) 40%, transparent 100%);
+    /* Ниже 0.9: на светлом фоне высокая непрозрачность + overlay-сетка «шарпит» фото */
+    --hero-img-opacity: 0.78;
     --hero-img-blend: normal;
-    --grid-opacity: 0.05;
+    --grid-opacity: 0.035;
     --glow-accent: rgba(132, 204, 22, 0.008);
     --text-shadow: none;
   }
@@ -152,6 +153,32 @@
 
     .banner-card-grid {
       opacity: var(--grid-opacity);
+    }
+  }
+
+  /*
+   * Light only: mix-blend-overlay на сетке поверх почти непрозрачного фото
+   * даёт «перешарп» и ломает текст/детали внутри баннера. Тёмную тему не трогаем.
+   */
+  [data-theme="light"] .banner-card-grid {
+    mix-blend-mode: normal;
+    opacity: 0.04;
+  }
+
+  [data-theme="light"] .banner-card-img {
+    image-rendering: auto;
+    /* Лёгкое смягчение краёв при даунскейле в узкую колонку */
+    filter: contrast(0.97) saturate(0.96);
+  }
+
+  @media (min-width: 48rem) {
+    [data-theme="light"] .banner-card-img {
+      opacity: calc(0.7 * var(--banner-image-factor, 1));
+      mix-blend-mode: normal;
+    }
+
+    [data-theme="light"] .banner-card-grid {
+      opacity: 0.03;
     }
   }
 }
