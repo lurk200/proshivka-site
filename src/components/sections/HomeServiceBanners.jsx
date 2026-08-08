@@ -42,11 +42,8 @@ function ShortBannerCard({ banner, index, cardEyebrow }) {
 
           <div className="absolute inset-0 z-[1] bg-diagnostic-grid mix-blend-overlay pointer-events-none banner-card-grid" />
           <div
-            className="absolute inset-0 z-[2] pointer-events-none"
-            style={{
-              background: 'var(--hero-gradient)',
-              opacity: 'var(--banner-hero-overlay, 1)',
-            }}
+            className="banner-hero-wash absolute inset-0 z-[2] pointer-events-none"
+            style={{ background: 'var(--hero-gradient)' }}
           />
           <div className="banner-card-fade absolute inset-0 z-[3] pointer-events-none" />
 
