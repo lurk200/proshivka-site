@@ -98,7 +98,6 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 1rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
@@ -108,21 +107,18 @@
   }
 
   .home-banner-item {
-    /* Почти на всю ширину — иначе ландшафтный креатив режется в «столбике» */
-    flex: 0 0 min(88vw, 22rem);
-    scroll-snap-align: center;
+    flex: 0 0 min(72vw, 11.5rem);
+    scroll-snap-align: start;
   }
 
   @media (min-width: 48rem) {
     .home-banners-scroll {
       overflow: visible;
       scroll-snap-type: none;
-      scroll-padding-inline: 0;
     }
 
     .home-banner-item {
       flex: initial;
-      scroll-snap-align: start;
     }
   }
 
@@ -130,9 +126,6 @@
   .banner-card-img {
     opacity: calc(0.48 * var(--banner-image-factor, 1));
     mix-blend-mode: normal;
-    /* Mobile: весь креатив в кадре, без обрезки текста слева/справа */
-    object-fit: contain;
-    object-position: center center;
   }
 
   .banner-card-grid {
@@ -161,8 +154,6 @@
     .banner-card-img {
       opacity: calc(var(--hero-img-opacity) * var(--banner-image-factor, 1));
       mix-blend-mode: var(--hero-img-blend);
-      object-fit: cover;
-      object-position: center center;
     }
 
     .banner-card-grid {

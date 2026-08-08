@@ -31,16 +31,13 @@ function ShortBannerCard({ banner, index, cardEyebrow }) {
   return (
     <li className="home-banner-item min-w-0 list-none snap-start">
       <Reveal delay={index * 40} immediate className="block h-full w-full min-w-0">
-        <Link
-          to={banner.path}
-          className={`${cardBaseClass} aspect-[16/10] h-full w-full sm:aspect-[4/5] md:aspect-[9/16]`}
-        >
+        <Link to={banner.path} className={`${cardBaseClass} aspect-[3/4] h-full w-full sm:aspect-[4/5] md:aspect-[9/16]`}>
           <SafeImage
             src={banner.image}
             alt={banner.title}
             loading={index < 4 ? 'eager' : 'lazy'}
             decoding="async"
-            className="banner-card-img absolute inset-0 h-full w-full transition-transform duration-[1200ms] ease-premium md:group-hover:scale-[1.05]"
+            className="banner-card-img absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-premium group-hover:scale-[1.05]"
           />
 
           <div className="absolute inset-0 z-[1] bg-diagnostic-grid mix-blend-overlay pointer-events-none banner-card-grid" />
