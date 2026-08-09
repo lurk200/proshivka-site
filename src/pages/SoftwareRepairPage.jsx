@@ -5,19 +5,16 @@ import {
   ArrowRight,
   Terminal,
   Activity,
-  Clock,
   CheckCircle2,
   Unlock,
   FileCode2,
   Database,
   ShieldCheck,
-  Search,
   Phone,
   MessageCircle,
   Smartphone,
 } from 'lucide-react';
 import PageTransition from '../components/layout/PageTransition';
-import FaqAccordion from '../components/sections/FaqAccordion';
 import { Reveal } from '../components/ui';
 import { useCms } from '../context/CmsContext';
 
@@ -47,11 +44,7 @@ export default function SoftwareRepairPage() {
   const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
   const telegramUrl = company.contacts?.find((c) => c.type === 'telegram')?.url;
   const symptoms = buildSymptoms(page.hero?.tags);
-  const services = page.services?.featured ?? [];
   const cases = page.portfolio ?? [];
-  const principles = page.principles ?? [];
-  const process = template.process ?? [];
-  const faq = template.faq ?? [];
   const cta = page.cta ?? {};
   const sections = page.sections ?? {};
 
@@ -180,50 +173,6 @@ export default function SoftwareRepairPage() {
         </div>
       </section>
 
-      {/* Услуги — только программные */}
-      <section id="services" className="py-24 md:py-32 bg-[var(--bg-base)]">
-        <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
-          <Reveal className="mb-14 max-w-2xl">
-            <span className="text-[#84CC16] text-[11px] font-medium uppercase tracking-[0.12em] block mb-3">
-              {sections.services?.eyebrow}
-            </span>
-            <h2 className="text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-tight mb-4">
-              {sections.services?.title}
-            </h2>
-            <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
-              {sections.services?.subtitle}
-            </p>
-          </Reveal>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {services.map((service, idx) => {
-              const Icon = service.icon;
-              return (
-                <Reveal key={service.id} delay={idx * 60}>
-                  <div className="group h-full p-8 md:p-10 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[var(--shadow-soft)] hover:border-[var(--border-accent-hover)] hover:shadow-[var(--shadow-card)] transition-all duration-300">
-                    <div className="w-12 h-12 rounded-xl bg-[#84CC16]/10 border border-[#84CC16]/20 flex items-center justify-center mb-6">
-                      {Icon ? <Icon className="w-6 h-6 text-[#84CC16]" strokeWidth={1.75} /> : null}
-                    </div>
-                    <h3 className="text-[20px] font-medium text-[var(--text-primary)] mb-3 tracking-tight">
-                      {service.title}
-                    </h3>
-                    <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">{service.desc}</p>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </div>
-          <Reveal delay={120} className="mt-10">
-            <p className="text-[13px] text-[var(--text-muted)]">
-              Аппаратный ремонт (стекло, аккумулятор, влага, модули) —{' '}
-              <Link to="/" className="text-[#84CC16] hover:underline">
-                на главной странице
-              </Link>
-              .
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
       {/* Кейсы */}
       {cases.length > 0 ? (
         <section id="cases" className="py-24 md:py-32 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)]">
@@ -269,78 +218,6 @@ export default function SoftwareRepairPage() {
           </div>
         </section>
       ) : null}
-
-      {/* Принципы */}
-      {principles.length > 0 ? (
-        <section className="py-24 md:py-32 bg-[var(--bg-base)]">
-          <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
-            <Reveal className="mb-14 text-center max-w-2xl mx-auto">
-              <span className="text-[#84CC16] text-[11px] font-medium uppercase tracking-[0.12em] block mb-3">
-                {sections.principles?.eyebrow}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-tight mb-4">
-                {sections.principles?.title}
-              </h2>
-              <p className="text-[15px] text-[var(--text-secondary)]">{sections.principles?.subtitle}</p>
-            </Reveal>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {principles.map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <Reveal key={item.id} delay={idx * 60}>
-                    <div className="h-full p-8 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-center sm:text-left">
-                      <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-5 mx-auto sm:mx-0">
-                        {Icon ? <Icon className="w-6 h-6 text-[#84CC16]" strokeWidth={1.75} /> : null}
-                      </div>
-                      <h3 className="text-[18px] font-medium text-[var(--text-primary)] mb-3">{item.title}</h3>
-                      <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
-                    </div>
-                  </Reveal>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Процесс */}
-      {process.length > 0 ? (
-        <section className="py-24 md:py-32 bg-[var(--bg-surface)] border-y border-[var(--border-subtle)]">
-          <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
-            <Reveal className="mb-16">
-              <span className="text-[#84CC16] text-[11px] font-medium uppercase tracking-[0.12em] block mb-3">
-                {template.processSection?.eyebrow}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-tight">
-                {template.processSection?.title}
-              </h2>
-            </Reveal>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {process.map((step, idx) => {
-                const Icon = step.icon;
-                return (
-                  <Reveal key={step.title} delay={idx * 50}>
-                    <div className="relative group">
-                      <div className="w-16 h-16 rounded-[20px] bg-[var(--bg-base)] border border-[var(--border-medium)] flex items-center justify-center mb-5 shadow-[var(--shadow-soft)] group-hover:border-[#84CC16]/30 transition-colors">
-                        {Icon ? (
-                          <Icon className="w-7 h-7 text-[var(--text-secondary)] group-hover:text-[#84CC16] transition-colors" strokeWidth={1.75} />
-                        ) : null}
-                        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-[10px] font-medium text-[var(--text-muted)]">
-                          {idx + 1}
-                        </span>
-                      </div>
-                      <h4 className="text-[16px] font-medium text-[var(--text-primary)] mb-2">{step.title}</h4>
-                      <p className="text-[14px] text-[var(--text-muted)] leading-relaxed">{step.desc}</p>
-                    </div>
-                  </Reveal>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <FaqAccordion items={faq} title={template.faqSection?.title} />
 
       {/* CTA */}
       <section id="contact" className="py-24 md:py-32 relative overflow-hidden bg-[var(--bg-base)]">
