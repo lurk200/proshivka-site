@@ -49,7 +49,7 @@ export const ADMIN_NAVIGATION = [
     defaultOpen: true,
     items: [
       { path: '/admin/main', label: 'Главная страница', description: 'Блоки, баннеры и тексты главной страницы.', icon: Image },
-      { path: '/admin/software-repair', label: 'Программный ремонт', description: 'Hero, кейсы и CTA страницы /programmnyj-remont.', icon: Sparkles },
+      { path: '/admin/software-repair', label: 'Программный ремонт', description: 'Hero, типовые сбои, кейсы и CTA страницы /programmnyj-remont.', icon: Sparkles },
       { path: '/admin/service-pages', label: 'Аппаратные услуги', description: 'Контент страниц аппаратного ремонта.', icon: FileText },
       { path: '/admin/service-template', label: 'Шаблон страниц услуг', description: 'Процесс, FAQ и CTA для аппаратных /services/* (не для прог. ремонта).', icon: LayoutTemplate },
       { path: '/admin/works', label: 'Наши работы', description: 'Портфолио выполненных ремонтов.', icon: Layers },
@@ -88,8 +88,9 @@ export const ADMIN_SEARCH_ITEMS = [
   ...BASE_ITEMS,
   { path: '/admin/main?tab=banners', label: 'Баннеры главной', description: 'Баннеры услуг на главной странице.', group: 'Главная страница', route: '/admin/main' },
   { path: '/admin/main?tab=about', label: 'О нас и карта', description: 'Блок «О нас» и карта на главной странице.', group: 'Главная страница', route: '/admin/main' },
-  { path: '/admin/software-repair?tab=hero', label: 'Первый экран — программный ремонт', description: 'Заголовок и подзаголовок страницы.', group: 'Программный ремонт', route: '/admin/software-repair' },
-  { path: '/admin/software-repair?tab=sections', label: 'Секции — программный ремонт', description: 'Заголовок блока кейсов.', group: 'Программный ремонт', route: '/admin/software-repair' },
+  { path: '/admin/software-repair?tab=hero', label: 'Первый экран — программный ремонт', description: 'Бейдж, заголовок, телеметрия и Recovery mode.', group: 'Программный ремонт', route: '/admin/software-repair' },
+  { path: '/admin/software-repair?tab=symptoms', label: 'Типовые сбои — программный ремонт', description: 'Блок «Когда обращаться» и карточки сбоев.', group: 'Программный ремонт', route: '/admin/software-repair' },
+  { path: '/admin/software-repair?tab=sections', label: 'Заголовки кейсов — программный ремонт', description: 'Подписи блока кейсов.', group: 'Программный ремонт', route: '/admin/software-repair' },
   { path: '/admin/software-repair?tab=cases', label: 'Кейсы — программный ремонт', description: 'Примеры выполненных работ.', group: 'Программный ремонт', route: '/admin/software-repair' },
   { path: '/admin/software-repair?tab=cta', label: 'Призыв к действию — программный ремонт', description: 'Блок внизу страницы программного ремонта.', group: 'Программный ремонт', route: '/admin/software-repair' },
 ].map(item => ({ ...item, group: item.group ?? ADMIN_NAVIGATION.find(group => group.items.includes(item))?.title ?? 'Основное', route: item.route ?? item.path }));

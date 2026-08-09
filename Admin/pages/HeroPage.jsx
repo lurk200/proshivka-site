@@ -10,104 +10,123 @@ export default function HeroPage() {
   }));
   useUnsavedGuard(isDirty);
 
-  const handleSave = () => {
-    save((page) => ({ ...page, meta: draft.meta, hero: draft.hero }));
-  };
+  const hero = draft.hero ?? {};
+  const telemetry = hero.telemetry ?? {};
+  const labels = hero.telemetryLabels ?? {};
+  const sideCard = hero.sideCard ?? {};
 
-  const handleReset = () => {
-    reset();
-  };
+  const setHero = (patch) => setDraft({ ...draft, hero: { ...hero, ...patch } });
+  const setTelemetry = (patch) => setHero({ telemetry: { ...telemetry, ...patch } });
+  const setLabels = (patch) => setHero({ telemetryLabels: { ...labels, ...patch } });
+  const setSideCard = (patch) => setHero({ sideCard: { ...sideCard, ...patch } });
 
   return (
     <>
       <PageHeader
         title="Первый экран — Программный ремонт"
-        description="Hero-блок на странице /programmnyj-remont. Главная сайта (/) настраивается в разделе «Главная /»."
+        description="Hero-блок на /programmnyj-remont: бейдж, заголовок, телеметрия и карточка Recovery mode."
       />
       <AdminCard>
         <div className="space-y-5">
           <Field label="Заголовок вкладки браузера">
             <Input
-              value={draft.meta.title}
+              value={draft.meta?.title ?? ''}
               onChange={(e) => setDraft({ ...draft, meta: { ...draft.meta, title: e.target.value } })}
             />
           </Field>
-          <Field label="Рейтинг в блоке отзывов">
-            <Input
-              value={draft.meta.rating}
-              onChange={(e) => setDraft({ ...draft, meta: { ...draft.meta, rating: e.target.value } })}
-            />
-          </Field>
+
+          <div className="border-t border-white/[0.06] pt-5 space-y-5">
+            <Field label="Бейдж над заголовком">
+              <Input
+                value={hero.eyebrow ?? ''}
+                onChange={(e) => setHero({ eyebrow: e.target.value })}
+              />
+            </Field>
+            <Field label="Заголовок">
+              <Input
+                value={hero.title ?? ''}
+                onChange={(e) => setHero({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="Подзаголовок">
+              <Textarea
+                value={hero.subtitle ?? ''}
+                onChange={(e) => setHero({ subtitle: e.target.value })}
+                rows={3}
+              />
+            </Field>
+          </div>
+
           <div className="border-t border-white/[0.06] pt-5">
-            <Field label="Заголовок hero">
-              <Input value={draft.hero.title} onChange={(e) => setDraft({ ...draft, hero: { ...draft.hero, title: e.target.value } })} />
-            </Field>
+            <p className="text-[12px] font-mono text-[#84CC16] mb-4">Телеметрия</p>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="space-y-3">
+                <Field label="Подпись 1">
+                  <Input
+                    value={labels.status ?? ''}
+                    onChange={(e) => setLabels({ status: e.target.value })}
+                  />
+                </Field>
+                <Field label="Значение 1">
+                  <Input
+                    value={telemetry.status ?? ''}
+                    onChange={(e) => setTelemetry({ status: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <div className="space-y-3">
+                <Field label="Подпись 2">
+                  <Input
+                    value={labels.diagTime ?? ''}
+                    onChange={(e) => setLabels({ diagTime: e.target.value })}
+                  />
+                </Field>
+                <Field label="Значение 2">
+                  <Input
+                    value={telemetry.diagTime ?? ''}
+                    onChange={(e) => setTelemetry({ diagTime: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <div className="space-y-3">
+                <Field label="Подпись 3">
+                  <Input
+                    value={labels.successRate ?? ''}
+                    onChange={(e) => setLabels({ successRate: e.target.value })}
+                  />
+                </Field>
+                <Field label="Значение 3">
+                  <Input
+                    value={telemetry.successRate ?? ''}
+                    onChange={(e) => setTelemetry({ successRate: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
           </div>
-          <Field label="Подзаголовок">
-            <Textarea value={draft.hero.subtitle} onChange={(e) => setDraft({ ...draft, hero: { ...draft.hero, subtitle: e.target.value } })} rows={3} />
-          </Field>
-          <Field label="URL изображения hero">
-            <Input
-              value={draft.hero.imageUrl ?? ''}
-              onChange={(e) => setDraft({ ...draft, hero: { ...draft.hero, imageUrl: e.target.value } })}
-            />
-          </Field>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Кнопка 1">
+
+          <div className="border-t border-white/[0.06] pt-5 space-y-4">
+            <p className="text-[12px] font-mono text-[#84CC16]">Карточка справа (Recovery mode)</p>
+            <Field label="Заголовок карточки">
               <Input
-                value={draft.hero.primaryButton ?? ''}
-                onChange={(e) => setDraft({ ...draft, hero: { ...draft.hero, primaryButton: e.target.value } })}
+                value={sideCard.title ?? ''}
+                onChange={(e) => setSideCard({ title: e.target.value })}
               />
             </Field>
-            <Field label="Кнопка 2">
-              <Input
-                value={draft.hero.secondaryButton ?? ''}
-                onChange={(e) => setDraft({ ...draft, hero: { ...draft.hero, secondaryButton: e.target.value } })}
-              />
-            </Field>
-          </div>
-          <Field label="Теги" hint="Через запятую">
-            <Input
-              value={draft.hero.tags.join(', ')}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  hero: {
-                    ...draft.hero,
-                    tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
-                  },
-                })
-              }
-            />
-          </Field>
-          <div className="grid sm:grid-cols-3 gap-4 pt-2 border-t border-white/[0.06]">
-            <Field label="Статус системы">
-              <Input
-                value={draft.hero.telemetry.status}
-                onChange={(e) =>
-                  setDraft({ ...draft, hero: { ...draft.hero, telemetry: { ...draft.hero.telemetry, status: e.target.value } } })
-                }
-              />
-            </Field>
-            <Field label="Время диагностики">
-              <Input
-                value={draft.hero.telemetry.diagTime}
-                onChange={(e) =>
-                  setDraft({ ...draft, hero: { ...draft.hero, telemetry: { ...draft.hero.telemetry, diagTime: e.target.value } } })
-                }
-              />
-            </Field>
-            <Field label="Успешность">
-              <Input
-                value={draft.hero.telemetry.successRate}
-                onChange={(e) =>
-                  setDraft({ ...draft, hero: { ...draft.hero, telemetry: { ...draft.hero.telemetry, successRate: e.target.value } } })
-                }
+            <Field label="Текст карточки">
+              <Textarea
+                value={sideCard.subtitle ?? ''}
+                onChange={(e) => setSideCard({ subtitle: e.target.value })}
+                rows={2}
               />
             </Field>
           </div>
         </div>
-        <SaveBar onSave={handleSave} onReset={handleReset} saved={saved} />
+        <SaveBar
+          onSave={() => save((page) => ({ ...page, meta: draft.meta, hero: draft.hero }))}
+          onReset={reset}
+          saved={saved}
+        />
       </AdminCard>
     </>
   );

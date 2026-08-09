@@ -56,12 +56,11 @@ ls -la ~/proshivka-data/cms/site-content.json
 ### Программный ремонт (`/programmnyj-remont`)
 | Путь | Содержимое |
 |------|------------|
-| `/admin/software-repair?tab=hero` | Hero и meta |
+| `/admin/software-repair?tab=hero` | Бейдж, заголовок, телеметрия, Recovery mode |
+| `/admin/software-repair?tab=symptoms` | «Когда обращаться» / типовые сбои |
 | `/admin/software-repair?tab=sections` | Заголовок блока кейсов |
 | `/admin/software-repair?tab=cases` | Кейсы |
 | `/admin/software-repair?tab=cta` | Блок CTA |
-
-Блоки услуг, принципов, процесса и FAQ с этой страницы убраны — в админке их тоже нет.
 
 ### Сайт (общее)
 | Путь | Содержимое |

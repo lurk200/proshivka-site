@@ -24,7 +24,7 @@ import ReviewsPage from './pages/ReviewsPage';
 
 // Deep-link redirects: /admin/software-repair/hero → /admin/software-repair?tab=hero
 const softwareRepairTabRedirects = [
-  ...['hero', 'sections', 'cases', 'cta'].map((tab) => ({
+  ...['hero', 'symptoms', 'sections', 'cases', 'cta'].map((tab) => ({
     path: `software-repair/${tab}`,
     element: <Navigate to={`/admin/software-repair?tab=${tab}`} replace />,
   })),

@@ -1,15 +1,17 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Sparkles, LayoutTemplate, FolderOpen, Megaphone } from 'lucide-react';
+import { Sparkles, LayoutTemplate, AlertTriangle, FolderOpen, Megaphone } from 'lucide-react';
 import HeroPage from './HeroPage';
 import SectionsPage from './SectionsPage';
+import SymptomsPage from './SymptomsPage';
 import CasesPage from './CasesPage';
 import CtaPage from './CtaPage';
 
-/** Табы только для блоков, которые реально есть на /programmnyj-remont */
+/** Табы для блоков, которые есть на /programmnyj-remont */
 const TABS = [
   { id: 'hero', label: 'Hero', icon: Sparkles, Component: HeroPage },
-  { id: 'sections', label: 'Заголовки секций', icon: LayoutTemplate, Component: SectionsPage },
+  { id: 'symptoms', label: 'Типовые сбои', icon: AlertTriangle, Component: SymptomsPage },
+  { id: 'sections', label: 'Заголовки кейсов', icon: LayoutTemplate, Component: SectionsPage },
   { id: 'cases', label: 'Кейсы', icon: FolderOpen, Component: CasesPage },
   { id: 'cta', label: 'Блок CTA', icon: Megaphone, Component: CtaPage },
 ];

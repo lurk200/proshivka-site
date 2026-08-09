@@ -6,6 +6,7 @@ export function createDefaultPageContent() {
       rating: '5.0',
     },
     hero: {
+      eyebrow: 'Программное восстановление',
       title: 'Профессиональная прошивка и восстановление.',
       subtitle:
         'Помогаем восстановить смартфоны и планшеты после сбоев системы, блокировок, неудачных обновлений и сложных программных ошибок.',
@@ -21,6 +22,15 @@ export function createDefaultPageContent() {
         diagTime: '15-30 МИНУТ',
         successRate: '98% ВОССТАНОВЛЕНИЙ',
       },
+      telemetryLabels: {
+        status: 'Статус',
+        diagTime: 'Диагностика',
+        successRate: 'Успех',
+      },
+      sideCard: {
+        title: 'Recovery mode',
+        subtitle: 'Низкоуровневая прошивка, разблокировка и извлечение данных',
+      },
       imageUrl:
         '/images/placeholder.svg',
       primaryButton: 'Узнать стоимость восстановления',
@@ -32,6 +42,10 @@ export function createDefaultPageContent() {
         title: 'Программное восстановление и разблокировка',
         subtitle:
           'Глубокое восстановление микрокода, официальное снятие аппаратных блокировок и низкоуровневое извлечение данных. Решаем критические программные сбои, за которые не берутся классические сервисные центры.',
+      },
+      symptoms: {
+        eyebrow: 'Когда обращаться',
+        title: 'Типовые программные сбои',
       },
       portfolio: {
         eyebrow: 'Recovery Logs',
@@ -51,6 +65,7 @@ export function createDefaultPageContent() {
         subtitle: '',
       },
     },
+    symptoms: [],
     services: {
       featured: [
         {
@@ -205,6 +220,38 @@ export function createDefaultSoftwareRepairContent() {
       featured: base.services.featured,
       standard: [],
     },
+    symptoms: [
+      {
+        id: 'sym-1',
+        icon: 'Terminal',
+        title: 'Зависание на логотипе',
+        desc: 'Устройство не проходит загрузку или уходит в бесконечную перезагрузку (bootloop).',
+      },
+      {
+        id: 'sym-2',
+        icon: 'Unlock',
+        title: 'Разблокировка аккаунтов',
+        desc: 'Сброс FRP, Mi-аккаунта, графического ключа без потери данных, где это возможно.',
+      },
+      {
+        id: 'sym-3',
+        icon: 'FileCode2',
+        title: 'Сохранение данных',
+        desc: '«Кирпич» после OTA или неудачной самостоятельной прошивки — восстанавливаем загрузчик и систему.',
+      },
+      {
+        id: 'sym-4',
+        icon: 'Database',
+        title: 'Восстановление ОС',
+        desc: 'Извлечение фото и документов с не включающихся или залитых устройств.',
+      },
+      {
+        id: 'sym-5',
+        icon: 'ShieldCheck',
+        title: 'Снятие паролей',
+        desc: 'Официальные методы снятия блокировок экрана и привязок к аккаунтам.',
+      },
+    ],
   };
 }
 

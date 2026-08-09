@@ -56,6 +56,7 @@ export function resolvePageContent(page) {
         }
       : page.services,
     principles: resolveList(page.principles),
+    symptoms: resolveList(page.symptoms),
   };
 }
 

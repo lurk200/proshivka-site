@@ -219,9 +219,16 @@ function mergePageContent(saved) {
     ...base,
     ...saved,
     meta: { ...base.meta, ...saved.meta },
-    hero: { ...base.hero, ...saved.hero, telemetry: { ...base.hero.telemetry, ...saved.hero?.telemetry } },
+    hero: {
+      ...base.hero,
+      ...saved.hero,
+      telemetry: { ...base.hero.telemetry, ...saved.hero?.telemetry },
+      telemetryLabels: { ...base.hero.telemetryLabels, ...saved.hero?.telemetryLabels },
+      sideCard: { ...base.hero.sideCard, ...saved.hero?.sideCard },
+    },
     sections: {
       services: { ...base.sections.services, ...saved.sections?.services },
+      symptoms: { ...base.sections.symptoms, ...saved.sections?.symptoms },
       portfolio: { ...base.sections.portfolio, ...saved.sections?.portfolio },
       principles: { ...base.sections.principles, ...saved.sections?.principles },
       reviews: { ...base.sections.reviews, ...saved.sections?.reviews },
@@ -230,6 +237,7 @@ function mergePageContent(saved) {
       featured: saved.services?.featured?.length ? saved.services.featured : base.services.featured,
       standard: saved.services?.standard?.length ? saved.services.standard : base.services.standard,
     },
+    symptoms: saved.symptoms?.length ? saved.symptoms : base.symptoms,
     portfolio: saved.portfolio?.length ? saved.portfolio : base.portfolio,
     principles: saved.principles?.length ? saved.principles : base.principles,
     reviews: saved.reviews?.length ? saved.reviews : base.reviews,
@@ -327,9 +335,32 @@ function mergeSiteSeo(saved, ctx = {}) {
 function mergeSoftwareRepairPage(saved) {
   const base = createDefaultSoftwareRepairContent();
   const merged = mergePageContent(saved ?? base);
+  let symptoms = merged.symptoms?.length ? merged.symptoms : base.symptoms;
+  // Старый формат: только tags в hero → полноценные карточки сбоев
+  if (!saved?.symptoms?.length && saved?.hero?.tags?.length) {
+    symptoms = saved.hero.tags.map((title, idx) => ({
+      id: base.symptoms[idx]?.id ?? `sym-${idx + 1}`,
+      icon: base.symptoms[idx]?.icon ?? 'Terminal',
+      title,
+      desc: base.symptoms[idx]?.desc ?? '',
+    }));
+  }
   return {
     ...merged,
     meta: { ...base.meta, ...merged.meta, title: merged.meta?.title ?? base.meta.title },
+    hero: {
+      ...base.hero,
+      ...merged.hero,
+      eyebrow: merged.hero?.eyebrow || base.hero.eyebrow,
+      telemetry: { ...base.hero.telemetry, ...merged.hero?.telemetry },
+      telemetryLabels: { ...base.hero.telemetryLabels, ...merged.hero?.telemetryLabels },
+      sideCard: { ...base.hero.sideCard, ...merged.hero?.sideCard },
+    },
+    sections: {
+      ...merged.sections,
+      symptoms: { ...base.sections.symptoms, ...merged.sections?.symptoms },
+    },
+    symptoms,
     services: {
       featured: merged.services?.featured?.length ? merged.services.featured : base.services.featured,
       standard: [],

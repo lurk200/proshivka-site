@@ -4,12 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Terminal,
-  Activity,
   CheckCircle2,
-  Unlock,
-  FileCode2,
-  Database,
-  ShieldCheck,
   Phone,
   MessageCircle,
   Smartphone,
@@ -18,24 +13,6 @@ import PageTransition from '../components/layout/PageTransition';
 import { Reveal } from '../components/ui';
 import { useCms } from '../context/CmsContext';
 
-const SYMPTOM_ICONS = [Terminal, Unlock, FileCode2, Database, ShieldCheck, Activity];
-
-function buildSymptoms(tags = []) {
-  const defaults = [
-    { title: 'Зависание на логотипе', desc: 'Устройство не проходит загрузку или уходит в бесконечную перезагрузку (bootloop).' },
-    { title: 'Разблокировка аккаунтов', desc: 'Сброс FRP, Mi-аккаунта, графического ключа без потери данных, где это возможно.' },
-    { title: 'Сбой после обновления', desc: '«Кирпич» после OTA или неудачной самостоятельной прошивки — восстанавливаем загрузчик и систему.' },
-    { title: 'Спасение данных', desc: 'Извлечение фото и документов с не включающихся или залитых устройств.' },
-    { title: 'Снятие паролей', desc: 'Официальные методы снятия блокировок экрана и привязок к аккаунтам.' },
-  ];
-
-  return (tags.length ? tags : defaults.map((d) => d.title)).map((tag, idx) => ({
-    icon: SYMPTOM_ICONS[idx % SYMPTOM_ICONS.length],
-    title: typeof tag === 'string' ? tag : defaults[idx]?.title ?? 'Симптом',
-    desc: defaults[idx]?.desc ?? 'Диагностика и восстановление в лаборатории ПРОШИВКА.',
-  }));
-}
-
 export default function SoftwareRepairPage() {
   const { cmsData } = useCms();
   const page = cmsData.softwareRepair;
@@ -43,10 +20,13 @@ export default function SoftwareRepairPage() {
   const { company } = cmsData;
   const phoneHref = `tel:${company.phone.replace(/[^\d+]/g, '')}`;
   const telegramUrl = company.contacts?.find((c) => c.type === 'telegram')?.url;
-  const symptoms = buildSymptoms(page.hero?.tags);
+  const symptoms = page.symptoms ?? [];
   const cases = page.portfolio ?? [];
   const cta = page.cta ?? {};
   const sections = page.sections ?? {};
+  const hero = page.hero ?? {};
+  const telemetryLabels = hero.telemetryLabels ?? {};
+  const sideCard = hero.sideCard ?? {};
 
   return (
     <PageTransition>
@@ -78,46 +58,46 @@ export default function SoftwareRepairPage() {
                 <div className="inline-flex items-center gap-3 mb-8 px-4 py-2 rounded-full bg-[#84CC16]/10 border border-[#84CC16]/25 backdrop-blur-md">
                   <Terminal className="w-4 h-4 text-[#84CC16]" strokeWidth={1.75} />
                   <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#84CC16]">
-                    Программное восстановление
+                    {hero.eyebrow}
                   </span>
                 </div>
               </Reveal>
               <Reveal delay={150}>
                 <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-medium text-[var(--text-primary)] leading-[1.05] tracking-tight mb-8">
-                  {page.hero?.title}
+                  {hero.title}
                 </h1>
               </Reveal>
               <Reveal delay={200}>
                 <p className="text-[var(--text-secondary)] text-lg md:text-xl leading-relaxed max-w-2xl mb-12">
-                  {page.hero?.subtitle}
+                  {hero.subtitle}
                 </p>
               </Reveal>
               <Reveal delay={250}>
                 <div className="flex flex-wrap gap-8">
                   <div className="flex flex-col">
                     <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--text-muted)] mb-2">
-                      Статус
+                      {telemetryLabels.status}
                     </span>
                     <span className="text-[var(--text-primary)] font-medium text-lg">
-                      {page.hero?.telemetry?.status}
+                      {hero.telemetry?.status}
                     </span>
                   </div>
                   <div className="w-px h-10 bg-[var(--border-subtle)] self-center hidden sm:block" />
                   <div className="flex flex-col">
                     <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--text-muted)] mb-2">
-                      Диагностика
+                      {telemetryLabels.diagTime}
                     </span>
                     <span className="text-[var(--text-primary)] font-medium text-lg">
-                      {page.hero?.telemetry?.diagTime}
+                      {hero.telemetry?.diagTime}
                     </span>
                   </div>
                   <div className="w-px h-10 bg-[var(--border-subtle)] self-center hidden sm:block" />
                   <div className="flex flex-col">
                     <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--text-muted)] mb-2">
-                      Успех
+                      {telemetryLabels.successRate}
                     </span>
                     <span className="text-[var(--text-primary)] font-medium text-lg">
-                      {page.hero?.telemetry?.successRate}
+                      {hero.telemetry?.successRate}
                     </span>
                   </div>
                 </div>
@@ -132,10 +112,10 @@ export default function SoftwareRepairPage() {
                     <Smartphone className="w-11 h-11 text-[#84CC16]" strokeWidth={1.5} />
                   </div>
                   <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#84CC16] mb-2">
-                    Recovery mode
+                    {sideCard.title}
                   </p>
                   <p className="text-[14px] text-[var(--text-secondary)] max-w-[220px] leading-relaxed">
-                    Низкоуровневая прошивка, разблокировка и извлечение данных
+                    {sideCard.subtitle}
                   </p>
                 </div>
               </div>
@@ -145,33 +125,38 @@ export default function SoftwareRepairPage() {
       </section>
 
       {/* Симптомы */}
-      <section className="py-24 md:py-32 bg-[var(--bg-surface)] border-y border-[var(--border-subtle)]">
-        <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
-          <Reveal className="mb-16 text-center max-w-2xl mx-auto">
-            <span className="text-[#84CC16] text-[11px] font-medium uppercase tracking-[0.12em] block mb-4">
-              Когда обращаться
-            </span>
-            <h2 className="text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-tight">
-              Типовые программные сбои
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {symptoms.map((item, idx) => (
-              <Reveal key={item.title} delay={idx * 50}>
-                <div className="h-full p-8 rounded-[24px] bg-[var(--bg-base)] border border-[var(--border-subtle)] shadow-[var(--shadow-soft)] hover:border-[var(--border-accent-hover)] hover:shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5">
-                  <div className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6">
-                    <item.icon className="w-6 h-6 text-[#84CC16]" strokeWidth={1.75} />
-                  </div>
-                  <h3 className="text-[18px] font-medium text-[var(--text-primary)] mb-3 tracking-tight">
-                    {item.title}
-                  </h3>
-                  <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
-                </div>
-              </Reveal>
-            ))}
+      {symptoms.length > 0 ? (
+        <section className="py-24 md:py-32 bg-[var(--bg-surface)] border-y border-[var(--border-subtle)]">
+          <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
+            <Reveal className="mb-16 text-center max-w-2xl mx-auto">
+              <span className="text-[#84CC16] text-[11px] font-medium uppercase tracking-[0.12em] block mb-4">
+                {sections.symptoms?.eyebrow}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-tight">
+                {sections.symptoms?.title}
+              </h2>
+            </Reveal>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {symptoms.map((item, idx) => {
+                const Icon = item.icon || Terminal;
+                return (
+                  <Reveal key={item.id || item.title} delay={idx * 50}>
+                    <div className="h-full p-8 rounded-[24px] bg-[var(--bg-base)] border border-[var(--border-subtle)] shadow-[var(--shadow-soft)] hover:border-[var(--border-accent-hover)] hover:shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5">
+                      <div className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6">
+                        <Icon className="w-6 h-6 text-[#84CC16]" strokeWidth={1.75} />
+                      </div>
+                      <h3 className="text-[18px] font-medium text-[var(--text-primary)] mb-3 tracking-tight">
+                        {item.title}
+                      </h3>
+                      <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed">{item.desc}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Кейсы */}
       {cases.length > 0 ? (

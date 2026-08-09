@@ -30,6 +30,7 @@ const QUICK_LINKS = [
   { to: '/admin/repair-price', label: 'Калькулятор цен', icon: Calculator, group: 'Сайт' },
   { to: '/admin/works', label: 'Наши работы', icon: Layers, group: 'Сайт' },
   { to: '/admin/software-repair?tab=hero', label: 'Hero прог. ремонта', icon: Sparkles, group: 'Прог. ремонт' },
+  { to: '/admin/software-repair?tab=symptoms', label: 'Типовые сбои', icon: AlertTriangle, group: 'Прог. ремонт' },
   { to: '/admin/software-repair?tab=cases', label: 'Кейсы', icon: FolderOpen, group: 'Прог. ремонт' },
   { to: '/admin/software-repair?tab=cta', label: 'CTA', icon: Megaphone, group: 'Прог. ремонт' },
   { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText, group: 'Сайт' },
