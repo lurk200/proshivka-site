@@ -1,27 +1,24 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Sparkles, LayoutTemplate, Wrench, FolderOpen, Lightbulb, Megaphone } from 'lucide-react';
+import { Sparkles, LayoutTemplate, FolderOpen, Megaphone } from 'lucide-react';
 import HeroPage from './HeroPage';
 import SectionsPage from './SectionsPage';
-import ServicesPage from './ServicesPage';
 import CasesPage from './CasesPage';
-import PrinciplesPage from './PrinciplesPage';
 import CtaPage from './CtaPage';
 
+/** Табы только для блоков, которые реально есть на /programmnyj-remont */
 const TABS = [
-  { id: 'hero',       label: 'Hero',            icon: Sparkles,      Component: HeroPage },
-  { id: 'sections',   label: 'Заголовки секций', icon: LayoutTemplate, Component: SectionsPage },
-  { id: 'services',   label: 'Услуги',           icon: Wrench,         Component: ServicesPage },
-  { id: 'cases',      label: 'Кейсы',            icon: FolderOpen,     Component: CasesPage },
-  { id: 'principles', label: 'О лаборатории',    icon: Lightbulb,      Component: PrinciplesPage },
-  { id: 'cta',        label: 'Блок CTA',         icon: Megaphone,      Component: CtaPage },
+  { id: 'hero', label: 'Hero', icon: Sparkles, Component: HeroPage },
+  { id: 'sections', label: 'Заголовки секций', icon: LayoutTemplate, Component: SectionsPage },
+  { id: 'cases', label: 'Кейсы', icon: FolderOpen, Component: CasesPage },
+  { id: 'cta', label: 'Блок CTA', icon: Megaphone, Component: CtaPage },
 ];
 
 export default function SoftwareRepairEditorPage() {
   const [params, setParams] = useSearchParams();
   const activeTab = params.get('tab') || 'hero';
 
-  const current = TABS.find(t => t.id === activeTab) ?? TABS[0];
+  const current = TABS.find((t) => t.id === activeTab) ?? TABS[0];
   const { Component } = current;
 
   const setTab = (id) => {
@@ -30,7 +27,6 @@ export default function SoftwareRepairEditorPage() {
 
   return (
     <div>
-      {/* Tab bar */}
       <div className="flex items-center gap-0.5 mb-6 overflow-x-auto pb-1 border-b border-white/[0.06]">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = id === activeTab;
@@ -52,7 +48,6 @@ export default function SoftwareRepairEditorPage() {
         })}
       </div>
 
-      {/* Active tab content */}
       <Component />
     </div>
   );

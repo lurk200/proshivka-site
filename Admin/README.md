@@ -56,20 +56,19 @@ ls -la ~/proshivka-data/cms/site-content.json
 ### Программный ремонт (`/programmnyj-remont`)
 | Путь | Содержимое |
 |------|------------|
-| `/admin/software-repair/hero` | Hero и meta этой страницы |
-| `/admin/software-repair/sections` | Заголовки секций |
-| `/admin/software-repair/services` | Услуги |
-| `/admin/software-repair/cases` | Кейсы |
-| `/admin/software-repair/reviews` | Отзывы |
-| `/admin/software-repair/principles` | О лаборатории |
-| `/admin/software-repair/cta` | Блок CTA |
+| `/admin/software-repair?tab=hero` | Hero и meta |
+| `/admin/software-repair?tab=sections` | Заголовок блока кейсов |
+| `/admin/software-repair?tab=cases` | Кейсы |
+| `/admin/software-repair?tab=cta` | Блок CTA |
+
+Блоки услуг, принципов, процесса и FAQ с этой страницы убраны — в админке их тоже нет.
 
 ### Сайт (общее)
 | Путь | Содержимое |
 |------|------------|
 | `/admin/navigation` | Карточки в hero, ссылки футера |
-| `/admin/service-pages` | Страницы услуг |
-| `/admin/service-template` | Шаблон услуги (процесс, FAQ, CTA) |
+| `/admin/service-pages` | Страницы аппаратных услуг |
+| `/admin/service-template` | Процесс, FAQ, CTA для `/services/*` (не для прог. ремонта) |
 | `/admin/legal` | Правовые документы |
 
 Публичная страница работ: `/nashi-raboty`

@@ -4,10 +4,9 @@ import { usePageDraft } from '../hooks/usePageCms';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard';
 import { PageHeader, AdminCard, Field, Input, SaveBar } from '../components/ui';
 
+/** Только секции, которые ещё рендерятся на /programmnyj-remont */
 const SECTION_KEYS = [
-  { key: 'services', label: 'Услуги' },
   { key: 'portfolio', label: 'Кейсы' },
-  { key: 'principles', label: 'О лаборатории' },
 ];
 
 export default function SectionsPage() {

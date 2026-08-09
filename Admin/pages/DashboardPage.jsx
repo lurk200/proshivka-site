@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle, ArrowRight, Building2, Calculator, ClipboardList, Clock, FileText,
-  FolderOpen, Globe, Image, Layers, Lightbulb, Megaphone, Navigation,
-  Scale, Send, Sparkles, Terminal, Wrench, LayoutTemplate, RefreshCw,
+  FolderOpen, Globe, Image, Layers, Megaphone, Navigation,
+  Scale, Send, Sparkles, Terminal, RefreshCw,
   MapPin, TrendingUp, Package, Activity, BarChart2, Star,
 } from 'lucide-react';
 import { useCms } from '../../src/context/CmsContext';
@@ -30,7 +30,6 @@ const QUICK_LINKS = [
   { to: '/admin/repair-price', label: 'Калькулятор цен', icon: Calculator, group: 'Сайт' },
   { to: '/admin/works', label: 'Наши работы', icon: Layers, group: 'Сайт' },
   { to: '/admin/software-repair?tab=hero', label: 'Hero прог. ремонта', icon: Sparkles, group: 'Прог. ремонт' },
-  { to: '/admin/software-repair?tab=services', label: 'Услуги', icon: Wrench, group: 'Прог. ремонт' },
   { to: '/admin/software-repair?tab=cases', label: 'Кейсы', icon: FolderOpen, group: 'Прог. ремонт' },
   { to: '/admin/software-repair?tab=cta', label: 'CTA', icon: Megaphone, group: 'Прог. ремонт' },
   { to: '/admin/service-pages', label: 'Аппаратные услуги', icon: FileText, group: 'Сайт' },
@@ -84,7 +83,6 @@ export default function DashboardPage() {
   const [reviewStats, setReviewStats] = useState(null);
 
   const softwarePage = content[PAGE_KEYS.SOFTWARE_REPAIR] ?? {};
-  const servicesCount = softwarePage.services?.featured?.length ?? 0;
   const casesCount = softwarePage.portfolio?.length ?? 0;
   const worksCount = content.works?.items?.filter(w => w.published !== false).length ?? 0;
   const seoCount = Object.keys(content.siteSeo?.pages ?? {}).length;
@@ -271,19 +269,19 @@ export default function DashboardPage() {
       </AdminCard>
 
       {/* ── Secondary Stats ───────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <div className="bg-[#14161a] border border-white/[0.06] rounded-xl px-4 py-3 flex items-center gap-3">
-          <Wrench className="w-4 h-4 text-[#6b7280] shrink-0" strokeWidth={1.75} />
-          <div>
-            <p className="text-[18px] font-bold text-white leading-none">{servicesCount}</p>
-            <p className="text-[11px] text-[#6b7280] mt-0.5">Услуг прог. ремонта</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
         <div className="bg-[#14161a] border border-white/[0.06] rounded-xl px-4 py-3 flex items-center gap-3">
           <FolderOpen className="w-4 h-4 text-[#6b7280] shrink-0" strokeWidth={1.75} />
           <div>
             <p className="text-[18px] font-bold text-white leading-none">{casesCount}</p>
-            <p className="text-[11px] text-[#6b7280] mt-0.5">Кейсов</p>
+            <p className="text-[11px] text-[#6b7280] mt-0.5">Кейсов прог. ремонта</p>
+          </div>
+        </div>
+        <div className="bg-[#14161a] border border-white/[0.06] rounded-xl px-4 py-3 flex items-center gap-3">
+          <Image className="w-4 h-4 text-[#6b7280] shrink-0" strokeWidth={1.75} />
+          <div>
+            <p className="text-[18px] font-bold text-white leading-none">{bannersCount}</p>
+            <p className="text-[11px] text-[#6b7280] mt-0.5">Баннеров на главной</p>
           </div>
         </div>
         <div className="bg-[#14161a] border border-white/[0.06] rounded-xl px-4 py-3 flex items-center gap-3">

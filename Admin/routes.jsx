@@ -23,10 +23,17 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ReviewsPage from './pages/ReviewsPage';
 
 // Deep-link redirects: /admin/software-repair/hero → /admin/software-repair?tab=hero
-const softwareRepairTabRedirects = ['hero', 'sections', 'services', 'cases', 'principles', 'cta'].map((tab) => ({
-  path: `software-repair/${tab}`,
-  element: <Navigate to={`/admin/software-repair?tab=${tab}`} replace />,
-}));
+const softwareRepairTabRedirects = [
+  ...['hero', 'sections', 'cases', 'cta'].map((tab) => ({
+    path: `software-repair/${tab}`,
+    element: <Navigate to={`/admin/software-repair?tab=${tab}`} replace />,
+  })),
+  // Удалённые с сайта блоки — старые ссылки ведут на актуальный редактор
+  ...['services', 'principles'].map((tab) => ({
+    path: `software-repair/${tab}`,
+    element: <Navigate to="/admin/software-repair?tab=hero" replace />,
+  })),
+];
 
 export const adminRoutes = [
   {

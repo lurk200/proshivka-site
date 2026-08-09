@@ -23,7 +23,7 @@ export default function ServiceTemplatePage() {
     <>
       <PageHeader
         title="Шаблон страницы услуги"
-        description="Общие блоки: процесс, FAQ и нижний CTA (для страниц на ServicePageTemplate)."
+        description="Процесс, FAQ и нижний CTA для аппаратных страниц /services/* (стекло, АКБ, влага…). Не используется на /programmnyj-remont."
       />
 
       <AdminCard className="mb-6">
