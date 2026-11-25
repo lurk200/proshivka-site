@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "pipelines": {
+    "regular": [
+      {
+        "id": "accepted",
+        "label": "Принято",
+        "isTerminal": false,
+        "tone": "muted"
+      },
+      {
+        "id": "diagnostics",
+        "label": "Диагностика",
+        "isTerminal": false,
+        "tone": "info"
+      },
+      {
+        "id": "waiting_parts",
+        "label": "Ожидание запчасти",
+        "isTerminal": false,
+        "tone": "warning"
+      },
+      {
+        "id": "in_progress",
+        "label": "В работе",
+        "isTerminal": false,
+        "tone": "active"
+      },
+      {
+        "id": "ready",
+        "label": "Готово",
+        "isTerminal": false,
+        "tone": "success"
+      },
+      {
+        "id": "completed",
+        "label": "Выдан",
+        "isTerminal": true,
+        "tone": "done"
+      },
+      {
+        "id": "cancelled",
+        "label": "Отменено",
+        "isTerminal": true,
+        "tone": "cancelled"
+      }
+    ],
+    "warranty": [
+      {
+        "id": "accepted",
+        "label": "Принят по гарантии",
+        "isTerminal": false,
+        "tone": "muted"
+      },
+      {
+        "id": "diagnostics",
+        "label": "Диагностика",
+        "isTerminal": false,
+        "tone": "info"
+      },
+      {
+        "id": "in_progress",
+        "label": "В ремонте",
+        "isTerminal": false,
+        "tone": "active"
+      },
+      {
+        "id": "ready",
+        "label": "Готово",
+        "isTerminal": false,
+        "tone": "success"
+      },
+      {
+        "id": "completed",
+        "label": "Выдан",
+        "isTerminal": true,
+        "tone": "done"
+      },
+      {
+        "id": "cancelled",
+        "label": "Отменено",
+        "isTerminal": true,
+        "tone": "cancelled"
+      }
+    ],
+    "onsite": [
+      {
+        "id": "request",
+        "label": "Заявка",
+        "isTerminal": false,
+        "tone": "muted"
+      },
+      {
+        "id": "en_route",
+        "label": "В пути",
+        "isTerminal": false,
+        "tone": "info"
+      },
+      {
+        "id": "on_site",
+        "label": "На месте",
+        "isTerminal": false,
+        "tone": "active"
+      },
+      {
+        "id": "completed",
+        "label": "Закрыт",
+        "isTerminal": true,
+        "tone": "done"
+      },
+      {
+        "id": "cancelled",
+        "label": "Отменено",
+        "isTerminal": true,
+        "tone": "cancelled"
+      }
+    ],
+    "corporate": [
+      {
+        "id": "accepted",
+        "label": "Принят",
+        "isTerminal": false,
+        "tone": "muted"
+      },
+      {
+        "id": "approval",
+        "label": "Согласование",
+        "isTerminal": false,
+        "tone": "warning"
+      },
+      {
+        "id": "in_progress",
+        "label": "В работе",
+        "isTerminal": false,
+        "tone": "active"
+      },
+      {
+        "id": "ready",
+        "label": "Готово",
+        "isTerminal": false,
+        "tone": "success"
+      },
+      {
+        "id": "completed",
+        "label": "Выдан",
+        "isTerminal": true,
+        "tone": "done"
+      },
+      {
+        "id": "cancelled",
+        "label": "Отменено",
+        "isTerminal": true,
+        "tone": "cancelled"
+      }
+    ]
+  },
+  "devices": [],
+  "orders": [],
+  "nextDeviceNum": 6,
+  "nextOrderNum": 7
+}

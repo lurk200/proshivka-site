@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" fill="none">
+  <rect width="800" height="1000" fill="#E8EDF3"/>
+  <rect x="48" y="48" width="704" height="904" rx="28" stroke="#65A30D" stroke-opacity="0.28" stroke-width="2"/>
+  <circle cx="400" cy="420" r="72" stroke="#65A30D" stroke-opacity="0.45" stroke-width="3" fill="none"/>
+  <path d="M340 520h120M370 560h60" stroke="#94A3B8" stroke-width="6" stroke-linecap="round"/>
+  <text x="400" y="640" text-anchor="middle" fill="#64748B" font-family="Manrope, Arial, sans-serif" font-size="28" font-weight="600">Фото работы</text>
+</svg>

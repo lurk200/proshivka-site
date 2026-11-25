@@ -1,0 +1,21 @@
+[Unit]
+Description=ПРОШИВКА site (vite preview + API plugins)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/proshivka
+Environment=NODE_ENV=production
+Environment=HOME=/var/www/proshivka
+EnvironmentFile=-/var/www/proshivka/.env
+EnvironmentFile=-/etc/proshivka.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+# Данные CMS/CRM должны писаться от www-data
+ReadWritePaths=/var/www/proshivka/server
+
+[Install]
+WantedBy=multi-user.target

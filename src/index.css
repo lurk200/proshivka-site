@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #0c1222;
+  --color-ink-soft: #2a3544;
+  --color-muted: #64748b;
+  --color-line: #e2e8f0;
+  --color-canvas: #eef2f6;
+  --color-surface: #ffffff;
+  --color-accent: #52a800;
+  --color-accent-bright: #5fb000;
+  --color-accent-soft: #ecfccb;
+  --color-sky: #dbe7f5;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background:
+      radial-gradient(1200px 500px at 10% -10%, #dce9f8 0%, transparent 55%),
+      radial-gradient(900px 420px at 90% 0%, #e5f3cf 0%, transparent 50%),
+      var(--color-canvas);
+    letter-spacing: -0.015em;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shadow-card {
+    box-shadow:
+      0 1px 0 rgba(15, 23, 42, 0.04),
+      0 12px 32px rgba(15, 23, 42, 0.08);
+  }
+
+  .shadow-float {
+    box-shadow:
+      0 8px 30px rgba(15, 23, 42, 0.12),
+      0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+}
